@@ -160,7 +160,11 @@ export const mcpService = {
       const tafsirResponse = await fetch(`${QURAN_API}/tafsirs/169/by_ayah/${verseKey}`);
       if (tafsirResponse.ok) {
         const tafsirData = await tafsirResponse.json();
-        const tafsirText = tafsirData.tafsir?.text?.substring(0, 500);
+        const rawText = tafsirData.tafsir?.text || '';
+        
+        // Strip HTML tags and normalize whitespace
+        const cleanText = rawText.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+        const tafsirText = cleanText.substring(0, 300);
         
         if (tafsirText) {
           return `Based on the classical tafsir: "${tafsirText}..." - How does this insight from Ibn Kathir connect to what you reflected about "${reflection.substring(0, 50)}..."?`;

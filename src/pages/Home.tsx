@@ -55,7 +55,7 @@ export const Home = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
-          <h1 className="text-5xl md:text-7xl font-black text-sada-sand-50 tracking-tighter leading-[1.1]">
+          <h1 className="text-3xl sm:text-4xl md:text-7xl font-black text-sada-sand-50 tracking-tighter leading-[1.1]">
             How are you feeling <br/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-sada-sand-200 to-sada-sand-100">spiritually</span> today?
           </h1>
@@ -69,23 +69,29 @@ export const Home = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.8 }}
           onSubmit={handleMoodSubmit} 
-          className="hero-input-container mt-12 max-w-2xl mx-auto shadow-2xl shadow-sada-emerald-900/10 group"
+          className="hero-input-container mt-8 md:mt-12 max-w-2xl mx-auto shadow-2xl shadow-sada-emerald-900/10 group !overflow-hidden"
         >
           <input
             type="text"
             value={mood}
             onChange={(e) => setMood(e.target.value)}
-            placeholder="Grateful, Anxious, Seeking guidance..."
+            placeholder="Grateful, Anxious..."
             className="hero-input"
           />
-          <button 
-            type="submit"
-            disabled={isSearching}
-            className="btn-primary flex items-center gap-2"
-          >
-            {isSearching ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-sada-emerald-950" /> : <Search size={22} />}
-            <span className="hidden sm:inline">{isSearching ? 'Seeking...' : 'Find Peace'}</span>
-          </button>
+          <div className="flex-shrink-0 w-auto self-center">
+            <button 
+              type="submit"
+              disabled={isSearching}
+              className="btn-primary flex items-center justify-center p-2.5 rounded-full md:rounded-full md:px-8 md:py-4 transition-all min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0"
+            >
+              {isSearching ? (
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-sada-emerald-950" />
+              ) : (
+                <Search size={20} />
+              )}
+              <span className="hidden md:inline ml-2 whitespace-nowrap">{isSearching ? 'Seeking...' : 'Find Peace'}</span>
+            </button>
+          </div>
         </motion.form>
       </section>
 

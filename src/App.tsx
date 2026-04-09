@@ -58,11 +58,11 @@ const Header = () => {
   const { theme, toggleTheme } = useTheme();
   
   return (
-    <header className="flex justify-between items-center py-4 px-4 md:py-6 md:px-12 border-b border-sada-sand-100/5 bg-sada-slate-950/50 backdrop-blur-md sticky top-0 z-40 bg-dark">
+    <header className="flex justify-between items-center py-4 px-6 md:py-6 md:px-12 border-b border-sada-sand-100/5 bg-sada-slate-950/50 backdrop-blur-md sticky top-0 z-40 bg-dark">
       <Link to="/" className="flex items-center gap-3 md:gap-4 group cursor-pointer">
       <img src="/logo.png" alt="SADA Logo" className="w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center -rotate-12 transition-transform group-hover:rotate-0 duration-300 shadow-lg shadow-sada-sand-200/20 object-cover" />
-      <div>
-        <h1 className="text-xl md:text-2xl font-black text-sada-sand-50 tracking-tighter leading-none">SADA</h1>
+      <div className="flex flex-col">
+        <h1 className="text-lg md:text-2xl font-black text-sada-sand-50 tracking-tighter leading-none">SADA</h1>
         <p className="text-[8px] md:text-[10px] font-bold text-sada-sand-200/40 uppercase tracking-[0.2em] mt-0.5 md:mt-1 hidden sm:block">Echoes of Quran</p>
       </div>
     </Link>
@@ -87,9 +87,9 @@ const Header = () => {
 function App() {
   const { theme } = useTheme();
   return (
-    <div className="min-h-screen bg-sada-slate-950 text-sada-sand-50 relative pb-32 selection:bg-sada-sand-200/30 selection:text-sada-sand-50 bg-dark transition-colors duration-500">
+    <div className="min-h-screen bg-sada-slate-950 text-sada-sand-50 relative pb-32 selection:bg-sada-sand-200/30 selection:text-sada-sand-50 bg-dark transition-colors duration-500 overflow-x-hidden">
       <ScrollToTop />
-      <div className="max-w-7xl mx-auto relative z-10">
+      <div className="max-w-7xl mx-auto relative z-10 overflow-x-hidden">
         <Header />
         <main className="px-6 py-8">
           <Routes>

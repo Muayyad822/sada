@@ -22,7 +22,7 @@ export const Dashboard = () => {
   return (
     <div className="flex flex-col gap-10 w-full max-w-6xl mx-auto">
       {/* Header Profile Section */}
-      <div className="glass-card p-10 md:p-12 relative overflow-hidden group">
+      <div className="glass-card p-6 md:p-12 relative overflow-hidden group">
         <div className={`absolute top-0 right-0 w-64 h-64 blur-[100px] -z-10 transition-colors duration-1000 ${theme === 'dark' ? 'bg-sada-sand-200/5 group-hover:bg-sada-sand-200/10' : 'bg-sada-sand-200/10'}`} />
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative z-10">
           <div className="flex items-center gap-6">
@@ -33,10 +33,10 @@ export const Dashboard = () => {
               <User size={40} className={theme === 'dark' ? 'text-sada-emerald-950' : 'text-white'} />
             </motion.div>
             <div className="space-y-1">
-              <h2 className="text-4xl font-black text-sada-sand-50 tracking-tighter">Salaam, Abdallah</h2>
+              <h2 className="text-2xl md:text-4xl font-black text-sada-sand-50 tracking-tighter">Salaam, Abdallah</h2>
               <div className="flex items-center gap-2">
                  <div className="w-2 h-2 rounded-full bg-sada-emerald-700" />
-                 <p className="text-sada-sand-100/40 text-xs font-bold uppercase tracking-[0.2em]">Spiritual Habit Level: Seeker</p>
+                 <p className="text-sada-sand-100/40 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em]">Spiritual Habit Level: Seeker</p>
               </div>
             </div>
           </div>
@@ -44,7 +44,7 @@ export const Dashboard = () => {
           <motion.div 
             initial={{ x: 20, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            className="flex items-center gap-6 px-10 py-6 bg-sada-slate-950/80 rounded-[2.5rem] border-2 border-orange-500/20 shadow-2xl relative group/flame bg-dark"
+            className="flex items-center gap-6 px-6 py-4 md:px-10 md:py-6 bg-sada-slate-950/80 rounded-[2rem] md:rounded-[2.5rem] border-2 border-orange-500/20 shadow-2xl relative group/flame bg-dark w-full md:w-auto"
           >
             <div className="relative">
               <Flame size={48} className="text-orange-500 animate-pulse relative z-10" fill="currentColor" />
@@ -55,7 +55,7 @@ export const Dashboard = () => {
               />
             </div>
             <div>
-              <span className="block text-4xl font-black text-sada-sand-50 tracking-tighter leading-none">{stats.streak_count} Days</span>
+              <span className="block text-3xl md:text-4xl font-black text-sada-sand-50 tracking-tighter leading-none">{stats.streak_count} Days</span>
               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-400 block mt-2">Ramadan Momentum</span>
             </div>
           </motion.div>
@@ -67,7 +67,7 @@ export const Dashboard = () => {
         {/* Large Momentum Visualization */}
         <motion.div 
           whileHover={{ y: -5 }}
-          className={`lg:col-span-8 glass-card p-12 flex flex-col justify-between overflow-hidden relative group/hero ${theme === 'dark' ? 'bg-gradient-to-br from-sada-slate-900/60 to-sada-emerald-900/10' : 'bg-gradient-to-br from-sada-slate-900 to-sada-emerald-800/10'}`}
+          className={`lg:col-span-8 glass-card p-6 md:p-12 flex flex-col justify-between overflow-hidden relative group/hero ${theme === 'dark' ? 'bg-gradient-to-br from-sada-slate-900/60 to-sada-emerald-900/10' : 'bg-gradient-to-br from-sada-slate-900 to-sada-emerald-800/10'}`}
         >
           <div className="absolute -right-20 -bottom-20 opacity-10 transition-all duration-700 group-hover/hero:-translate-y-10 group-hover/hero:-translate-x-10">
             <TrendingUp size={300} />
@@ -79,9 +79,9 @@ export const Dashboard = () => {
             </h3>
             
             <div className="space-y-4 mb-12">
-               <div className="flex items-baseline gap-4">
-                 <span className="text-8xl font-black text-sada-sand-50 tracking-tighter tabular-nums drop-shadow-2xl">{stats.ramadan_momentum}%</span>
-                 <p className="text-sada-sand-100/50 text-lg font-medium italic max-w-xs transition-colors">Of your post-Ramadan spiritual intensity maintained.</p>
+               <div className="flex flex-col md:flex-row items-baseline gap-4">
+                 <span className="text-6xl md:text-8xl font-black text-sada-sand-50 tracking-tighter tabular-nums drop-shadow-2xl">{stats.ramadan_momentum}%</span>
+                 <p className="text-sada-sand-100/50 text-sm md:text-lg font-medium italic max-w-xs transition-colors">Of your post-Ramadan spiritual intensity maintained.</p>
                </div>
             </div>
             
@@ -108,11 +108,11 @@ export const Dashboard = () => {
             </div>
           </div>
           
-          <div className="mt-12 flex items-center gap-4 p-8 bg-sada-sand-200/5 rounded-[2rem] border border-white/5 relative z-10">
-            <div className="w-12 h-12 bg-sada-sand-200/10 rounded-full flex items-center justify-center text-sada-sand-200">
-               <Sparkles size={24} />
+          <div className="mt-8 md:mt-12 flex items-center gap-4 p-6 md:p-8 bg-sada-sand-200/5 rounded-[1.5rem] md:rounded-[2rem] border border-white/5 relative z-10">
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-sada-sand-200/10 rounded-full flex items-center justify-center text-sada-sand-200 shrink-0">
+               <Sparkles size={20} className="md:w-6 md:h-6" />
             </div>
-            <p className="text-sada-sand-100 font-medium leading-relaxed italic">
+            <p className="text-sada-sand-100 text-sm md:text-base font-medium leading-relaxed italic">
                "Your heart has maintained a steady rhythm of remembrance. You are in the top 15% of consistent Seekers this month."
             </p>
           </div>
@@ -121,7 +121,7 @@ export const Dashboard = () => {
         {/* Breakdown Card */}
         <motion.div 
           whileHover={{ y: -5 }}
-          className="lg:col-span-4 glass-card p-12 bg-sada-slate-900/40 flex flex-col justify-between"
+          className="lg:col-span-4 glass-card p-6 md:p-12 bg-sada-slate-900/40 flex flex-col justify-between"
         >
           <div>
             <h3 className="text-xl font-bold flex items-center gap-3 mb-10 text-sada-sand-200/40 font-ui uppercase tracking-[0.4em] text-[10px]">
@@ -166,13 +166,13 @@ export const Dashboard = () => {
           </div>
           
           <div className="pt-10 mt-10 border-t border-sada-sand-100/5 flex justify-between items-center group">
-             <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-black text-sada-sand-200/50 uppercase tracking-[0.3em] transition-colors">Total Focus</span>
-                <div className="flex items-baseline gap-2">
-                   <span className="text-4xl font-black text-sada-sand-50 tracking-tighter">{stats.tilawah_minutes + stats.tadabbur_minutes}</span>
-                   <span className="text-xs font-bold text-sada-sand-100/40 uppercase tracking-widest transition-colors">Minutes</span>
-                </div>
-             </div>
+              <div className="flex flex-col gap-1">
+                 <span className="text-[10px] font-black text-sada-sand-200/50 uppercase tracking-[0.3em] transition-colors">Total Focus</span>
+                 <div className="flex items-baseline gap-2">
+                    <span className="text-3xl md:text-4xl font-black text-sada-sand-50 tracking-tighter">{stats.tilawah_minutes + stats.tadabbur_minutes}</span>
+                    <span className="text-xs font-bold text-sada-sand-100/40 uppercase tracking-widest transition-colors">Minutes</span>
+                 </div>
+              </div>
              <motion.div 
                whileHover={{ rotate: 15 }}
                className="p-4 bg-sada-sand-200/5 rounded-2xl group-hover:bg-sada-sand-200/10 transition-colors"

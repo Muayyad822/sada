@@ -28,13 +28,23 @@ export const AudioPlayer = ({ playlist, onComplete }: AudioPlayerProps) => {
   const currentItem = playlist[currentIndex];
 
   useEffect(() => {
-    if (audioRef.current && currentItem.audio_url) {
+    if (audioRef.current) {
       setError(null);
+      
       if (isPlaying) {
+        if (!currentItem.audio_url) {
+          setError("This verse is currently unavailable in the chosen recitation style.");
+          setIsPlaying(false);
+          return;
+        }
+
         audioRef.current.play().catch(e => {
-          console.error("Playback error:", e);
+          console.error("Playback error caught in AudioPlayer:", e);
           if (e.name === 'NotSupportedError' || e.name === 'NotAllowedError') {
-            setError("Audio playback blocked or unsupported. Please check your browser settings.");
+            setError("Audio format unsupported or playback blocked by browser settings.");
+            setIsPlaying(false);
+          } else {
+            setError("An unexpected error occurred during playback.");
             setIsPlaying(false);
           }
         });
@@ -105,8 +115,13 @@ export const AudioPlayer = ({ playlist, onComplete }: AudioPlayerProps) => {
                  <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 mx-auto">
                     <Volume2 size={32} />
                  </div>
-                 <h3 className="text-xl font-bold text-sada-sand-50">Playback Issue</h3>
-                 <p className="text-sada-sand-100/60 max-w-xs mx-auto text-sm">{error}</p>
+                 <motion.p 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 0.8 }}
+                  className="text-lg md:text-2xl text-sada-sand-100/80 italic font-serif text-center mt-6 px-4"
+                >
+                  "{playlist[currentIndex].translation || 'Translation unavailable'}"
+                </motion.p>
                  <button 
                   onClick={() => { setError(null); setIsPlaying(true); }}
                   className="btn-primary w-full"
@@ -135,9 +150,13 @@ export const AudioPlayer = ({ playlist, onComplete }: AudioPlayerProps) => {
             exit={{ opacity: 0, y: -10 }}
             className="text-center mb-14 w-full"
           >
-            <h2 className="quran-text text-5xl md:text-7xl mb-10 leading-[1.8] text-sada-sand-50 drop-shadow-xl">
-              {currentItem.text_uthmani}
-            </h2>
+            <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="quran-text text-3xl md:text-5xl leading-[1.8] text-center px-4"
+                >
+                  {currentItem.text_uthmani}
+                </motion.div>
             <div className="max-w-2xl mx-auto space-y-4">
               <p className="text-xl md:text-2xl text-sada-sand-100 font-medium leading-relaxed italic">
                 "{currentItem.translation}"
@@ -172,24 +191,24 @@ export const AudioPlayer = ({ playlist, onComplete }: AudioPlayerProps) => {
             <button 
               onClick={() => currentIndex > 0 && setCurrentIndex(currentIndex - 1)} 
               disabled={currentIndex === 0}
-              className="p-4 text-sada-sand-100/60 disabled:opacity-20 hover:text-sada-sand-200 transition-all hover:scale-110"
+              className="p-3 md:p-4 text-sada-sand-100/60 disabled:opacity-20 hover:text-sada-sand-200 transition-all hover:scale-110"
             >
-              <SkipBack size={32} fill="currentColor" />
+              <SkipBack size={28} className="md:w-[32px] md:h-[32px]" fill="currentColor" />
             </button>
             
             <button 
               onClick={() => setIsPlaying(!isPlaying)}
-              className="w-24 h-24 bg-sada-sand-200 text-sada-emerald-950 rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-xl hover:shadow-sada-sand-200/40"
+              className="w-20 h-20 md:w-24 md:h-24 bg-sada-sand-200 text-sada-emerald-950 rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-xl hover:shadow-sada-sand-200/40"
             >
-              {isPlaying ? <Pause size={42} fill={theme === 'dark' ? "currentColor" : "white"} /> : <Play size={42} className="ml-1" fill={theme === 'dark' ? "currentColor" : "white"} />}
+              {isPlaying ? <Pause size={36} className="md:w-[42px] md:h-[42px]" fill={theme === 'dark' ? "currentColor" : "white"} /> : <Play size={36} className="ml-1 md:w-[42px] md:h-[42px]" fill={theme === 'dark' ? "currentColor" : "white"} />}
             </button>
 
             <button 
               onClick={() => currentIndex < playlist.length - 1 && setCurrentIndex(currentIndex + 1)} 
               disabled={currentIndex === playlist.length - 1}
-              className="p-4 text-sada-sand-100/60 disabled:opacity-20 hover:text-sada-sand-200 transition-all hover:scale-110"
+              className="p-3 md:p-4 text-sada-sand-100/60 disabled:opacity-20 hover:text-sada-sand-200 transition-all hover:scale-110"
             >
-              <SkipForward size={32} fill="currentColor" />
+              <SkipForward size={28} className="md:w-[32px] md:h-[32px]" fill="currentColor" />
             </button>
           </div>
 
