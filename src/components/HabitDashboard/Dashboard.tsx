@@ -33,11 +33,11 @@ export const Dashboard = () => {
               <User size={40} className={theme === 'dark' ? 'text-sada-emerald-950' : 'text-white'} />
             </motion.div>
             <div className="space-y-1">
-              <h2 className="text-2xl md:text-4xl font-black text-sada-sand-50 tracking-tighter">Salaam, Abdallah</h2>
+              <h2 className="text-2xl md:text-4xl font-black text-sada-sand-50 tracking-tighter">Salaam, {userService.getUserName()}</h2>
               <div className="flex items-center gap-2">
-                 <div className="w-2 h-2 rounded-full bg-sada-emerald-700" />
-                 <p className="text-sada-sand-100/40 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em]">Spiritual Habit Level: Seeker</p>
-              </div>
+                  <div className="w-2 h-2 rounded-full bg-sada-emerald-700" />
+                  <p className="text-sada-sand-100/40 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em]">Spiritual Habit Level: {stats.streak_count > 0 ? 'Seeker' : 'Beginner'}</p>
+               </div>
             </div>
           </div>
           
@@ -56,7 +56,7 @@ export const Dashboard = () => {
             </div>
             <div>
               <span className="block text-3xl md:text-4xl font-black text-sada-sand-50 tracking-tighter leading-none">{stats.streak_count} Days</span>
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-400 block mt-2">Ramadan Momentum</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-400 block mt-2">Current Streak</span>
             </div>
           </motion.div>
         </div>
@@ -81,7 +81,7 @@ export const Dashboard = () => {
             <div className="space-y-4 mb-12">
                <div className="flex flex-col md:flex-row items-baseline gap-4">
                  <span className="text-6xl md:text-8xl font-black text-sada-sand-50 tracking-tighter tabular-nums drop-shadow-2xl">{stats.ramadan_momentum}%</span>
-                 <p className="text-sada-sand-100/50 text-sm md:text-lg font-medium italic max-w-xs transition-colors">Of your post-Ramadan spiritual intensity maintained.</p>
+                 <p className="text-sada-sand-100/50 text-sm md:text-lg font-medium italic max-w-xs transition-colors">Of your spiritual intensity maintained.</p>
                </div>
             </div>
             
@@ -108,14 +108,18 @@ export const Dashboard = () => {
             </div>
           </div>
           
-          <div className="mt-8 md:mt-12 flex items-center gap-4 p-6 md:p-8 bg-sada-sand-200/5 rounded-[1.5rem] md:rounded-[2rem] border border-white/5 relative z-10">
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-sada-sand-200/10 rounded-full flex items-center justify-center text-sada-sand-200 shrink-0">
-               <Sparkles size={20} className="md:w-6 md:h-6" />
-            </div>
-            <p className="text-sada-sand-100 text-sm md:text-base font-medium leading-relaxed italic">
-               "Your heart has maintained a steady rhythm of remembrance. You are in the top 15% of consistent Seekers this month."
-            </p>
-          </div>
+           <div className="mt-8 md:mt-12 flex items-center gap-4 p-6 md:p-8 bg-sada-sand-200/5 rounded-[1.5rem] md:rounded-[2rem] border border-white/5 relative z-10">
+             <div className="w-10 h-10 md:w-12 md:h-12 bg-sada-sand-200/10 rounded-full flex items-center justify-center text-sada-sand-200 shrink-0">
+                <Sparkles size={20} className="md:w-6 md:h-6" />
+             </div>
+             <p className="text-sada-sand-100 text-sm md:text-base font-medium leading-relaxed italic">
+                {stats.streak_count > 10 
+                  ? "Your heart has maintained a steady rhythm of remembrance. You are in the top 15% of consistent Seekers this month."
+                  : stats.streak_count > 5 
+                    ? "You are building a beautiful habit of spiritual engagement. Keep the momentum going."
+                    : "Your journey of spiritual reflection has begun. Each step brings you closer to divine guidance."}
+             </p>
+           </div>
         </motion.div>
 
         {/* Breakdown Card */}
@@ -129,39 +133,48 @@ export const Dashboard = () => {
             </h3>
             
             <div className="space-y-12">
-              <div className="space-y-4">
-                <div className="flex justify-between items-end">
-                  <span className="text-sada-sand-100 flex items-center gap-3 font-bold group">
-                    <div className="w-3 h-3 rounded-full bg-sada-sand-200 shadow-[0_0_10px_rgba(253,230,138,0.5)]" /> 
-                    Tilawah
-                  </span>
-                  <span className="text-2xl font-black text-sada-sand-50 tabular-nums">{stats.tilawah_minutes}m</span>
-                </div>
-                <div className="w-full h-3 progress-track rounded-full overflow-hidden p-0.5 bg-dark">
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: '70%' }}
-                    className="h-full bg-sada-sand-200 rounded-full" 
-                  />
-                </div>
-              </div>
+              {(() => {
+                const total = stats.tilawah_minutes + stats.tadabbur_minutes;
+                const tilawahPct = total > 0 ? Math.round((stats.tilawah_minutes / total) * 100) : 0;
+                const tadabburPct = total > 0 ? Math.round((stats.tadabbur_minutes / total) * 100) : 0;
+                return (
+                  <>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-end">
+                        <span className="text-sada-sand-100 flex items-center gap-3 font-bold group">
+                          <div className="w-3 h-3 rounded-full bg-sada-sand-200 shadow-[0_0_10px_rgba(253,230,138,0.5)]" /> 
+                          Tilawah
+                        </span>
+                        <span className="text-2xl font-black text-sada-sand-50 tabular-nums">{stats.tilawah_minutes}m</span>
+                      </div>
+                      <div className="w-full h-3 progress-track rounded-full overflow-hidden p-0.5 bg-dark">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${tilawahPct}%` }}
+                          className="h-full bg-sada-sand-200 rounded-full" 
+                        />
+                      </div>
+                    </div>
 
-              <div className="space-y-4">
-                <div className="flex justify-between items-end">
-                  <span className="text-sada-sand-100 flex items-center gap-3 font-bold">
-                    <div className="w-3 h-3 rounded-full bg-sada-emerald-700 shadow-[0_0_10px_rgba(4,120,87,0.5)]" /> 
-                    Tadabbur
-                  </span>
-                  <span className="text-2xl font-black text-sada-sand-50 tabular-nums">{stats.tadabbur_minutes}m</span>
-                </div>
-                <div className="w-full h-3 progress-track rounded-full overflow-hidden p-0.5 bg-dark">
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: '30%' }}
-                    className="h-full bg-sada-emerald-700 rounded-full" 
-                  />
-                </div>
-              </div>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-end">
+                        <span className="text-sada-sand-100 flex items-center gap-3 font-bold">
+                          <div className="w-3 h-3 rounded-full bg-sada-emerald-700 shadow-[0_0_10px_rgba(4,120,87,0.5)]" /> 
+                          Tadabbur
+                        </span>
+                        <span className="text-2xl font-black text-sada-sand-50 tabular-nums">{stats.tadabbur_minutes}m</span>
+                      </div>
+                      <div className="w-full h-3 progress-track rounded-full overflow-hidden p-0.5 bg-dark">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${tadabburPct}%` }}
+                          className="h-full bg-sada-emerald-700 rounded-full" 
+                        />
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
           
@@ -185,10 +198,10 @@ export const Dashboard = () => {
         {/* Small Data Points */}
         <div className="lg:col-span-12 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
            {[
-             { label: 'Weekly ListenTime', value: '4.2h', icon: <Clock /> },
-             { label: 'Deep Reflections', value: '12', icon: <Sparkles /> },
-             { label: 'Consistency Score', value: 'A+', icon: <TrendingUp /> },
-             { label: 'Sada Community', value: 'Top 5%', icon: <Award /> }
+             { label: 'Weekly ListenTime', value: `${(stats.weekly_minutes / 60).toFixed(1)}h`, icon: <Clock /> },
+             { label: 'Deep Reflections', value: stats.reflection_count.toString(), icon: <Sparkles /> },
+             { label: 'Consistency Score', value: stats.streak_count > 10 ? 'A+' : stats.streak_count > 5 ? 'A' : 'B', icon: <TrendingUp /> },
+              { label: 'Sada Community', value: stats.streak_count > 10 ? 'Top 15%' : 'Growing', icon: <Award /> }
            ].map((item, i) => (
              <motion.div 
                key={item.label}

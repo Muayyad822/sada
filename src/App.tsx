@@ -1,6 +1,6 @@
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
-import { Headphones, PenTool, LayoutDashboard, Sun, Moon } from 'lucide-react';
+import { Headphones, PenTool, LayoutDashboard, Sun, Moon, LogIn, LogOut, User } from 'lucide-react';
 import { Home } from './pages/Home';
 import { Reflection } from './pages/Reflection';
 import { Stats } from './pages/Stats';
@@ -10,6 +10,7 @@ import { About } from './pages/About';
 import { NotFound } from './pages/NotFound';
 import { Callback } from './pages/Callback';
 import { useTheme } from './contexts/ThemeContext';
+import { userService } from './services/userService';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -72,13 +73,39 @@ const Header = () => {
           <Link to="/privacy" className="text-[9px] md:text-[10px] font-black text-sada-sand-100/30 uppercase tracking-[0.15em] md:tracking-[0.2em] hover:text-sada-sand-100/60 transition-colors hidden sm:block">Privacy</Link>
           <Link to="/terms" className="text-[9px] md:text-[10px] font-black text-sada-sand-100/30 uppercase tracking-[0.15em] md:tracking-[0.2em] hover:text-sada-sand-100/60 transition-colors hidden sm:block">Terms</Link>
         </div>
-        <button
-          onClick={toggleTheme}
-          className="p-2 rounded-full hover:bg-sada-sand-100/10 transition-colors"
-          aria-label="Toggle theme"
-        >
-          {theme === 'dark' ? <Sun size={20} className="text-sada-sand-200" /> : <Moon size={20} className="text-sada-sand-100" />}
-        </button>
+        
+        <div className="flex items-center gap-2 md:gap-3 border-l border-sada-sand-100/10 pl-3 md:pl-6">
+          {userService.isAuthenticated() ? (
+            <div className="flex items-center gap-3">
+               <button 
+                onClick={() => { userService.clearAuth(); window.location.reload(); }}
+                className="p-2 rounded-full hover:bg-red-500/10 text-sada-sand-100/40 hover:text-red-400 transition-colors"
+                title="Sign Out"
+              >
+                <LogOut size={18} />
+              </button>
+              <div className="w-8 h-8 rounded-full bg-sada-sand-200/10 flex items-center justify-center text-sada-sand-200 border border-sada-sand-200/20">
+                <User size={16} />
+              </div>
+            </div>
+          ) : (
+            <button 
+              onClick={() => window.location.href = userService.getLoginUrl()}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-sada-sand-200/10 text-sada-sand-200 hover:bg-sada-sand-200 hover:text-sada-emerald-950 transition-all text-[10px] font-black uppercase tracking-widest border border-sada-sand-200/20"
+            >
+              <LogIn size={14} />
+              <span className="hidden sm:inline">Sign In</span>
+            </button>
+          )}
+
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-full hover:bg-sada-sand-100/10 transition-colors"
+            aria-label="Toggle theme"
+          >
+            {theme === 'dark' ? <Sun size={20} className="text-sada-sand-200" /> : <Moon size={20} className="text-sada-sand-100" />}
+          </button>
+        </div>
       </div>
     </header>
   );

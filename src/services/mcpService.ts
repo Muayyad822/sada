@@ -1,7 +1,7 @@
 /**
  * Model Context Protocol (MCP) Service
- * Handles semantic search and scholarly grounding via AI with Quranic context.
  */
+import { QFContentService } from './qfContentApi';
 
 const QURAN_API = 'https://api.quran.com/api/v4';
 
@@ -112,10 +112,28 @@ export const mcpService = {
   semanticSearch: async (query: string): Promise<SemanticSearchResult[]> => {
     const normalizedQuery = query.toLowerCase().trim();
     
+    // Check for mood hints to improve search for abstract terms
     const matchedMapping = MOOD_VERSE_MAPPINGS.find(m => 
       m.mood === normalizedQuery || normalizedQuery.includes(m.mood)
     );
 
+    try {
+      // Use the raw query, but if it's a known mood, we can broaden it slightly for better results
+      const apiQuery = matchedMapping ? `${matchedMapping.mood} peace guidance` : normalizedQuery;
+      const results = await QFContentService.search(apiQuery);
+
+      if (results && results.length > 0) {
+        return results.slice(0, 6).map((r: any) => ({
+          verse_key: r.verse_key || `${r.chapter_id}:${r.verse_number}`,
+          relevance_score: r.score || 0.95,
+          reasoning: r.text?.replace(/<[^>]*>/g, '').substring(0, 120) || `Verses related to your state of ${query}`
+        }));
+      }
+    } catch (error) {
+      console.error('MCP: QF Search API integration error:', error);
+    }
+
+    // Fallback logic: If API fails OR returns no results, use curated mapping if available
     if (matchedMapping) {
       return matchedMapping.verses.map((v, i) => ({
         verse_key: v.key,
@@ -124,26 +142,7 @@ export const mcpService = {
       }));
     }
 
-    try {
-      const searchResponse = await fetch(
-        `${QURAN_API}/search?text=${encodeURIComponent(query)}&size=5`,
-        { headers: { 'Accept': 'application/json' } }
-      );
-
-      if (searchResponse.ok) {
-        const data = await searchResponse.json();
-        if (data.results?.length > 0) {
-          return data.results.slice(0, 5).map((r: any) => ({
-            verse_key: `${r.chapter_id}:${r.verse_number}`,
-            relevance_score: r.score || 0.9,
-            reasoning: r.text_matches?.[0] || 'Search result'
-          }));
-        }
-      }
-    } catch (error) {
-      console.log('MCP search API unavailable, using fallback');
-    }
-
+    // Absolute fallback: Generic verses
     const genericMood = MOOD_VERSE_MAPPINGS.flatMap(m => m.verses);
     return genericMood.slice(0, 4).map((v, i) => ({
       verse_key: v.key,
@@ -164,10 +163,25 @@ export const mcpService = {
         
         // Strip HTML tags and normalize whitespace
         const cleanText = rawText.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
-        const tafsirText = cleanText.substring(0, 300);
+        const tafsirText = cleanText.substring(0, 400);
         
         if (tafsirText) {
-          return `Based on the classical tafsir: "${tafsirText}..." - How does this insight from Ibn Kathir connect to what you reflected about "${reflection.substring(0, 50)}..."?`;
+          // Analytical prompts based on common themes in reflections
+          const lowercaseRef = reflection.toLowerCase();
+          
+          if (lowercaseRef.includes('struggle') || lowercaseRef.includes('hard') || lowercaseRef.includes('difficult')) {
+            return `Classical scholarship (Ibn Kathir) emphasizes that this verse was sent to provide firmment in trials. Knowing that, how does the specific insight—"${tafsirText.substring(0, 150)}..."—reframing your current struggle?`;
+          }
+          
+          if (lowercaseRef.includes('thank') || lowercaseRef.includes('grateful') || lowercaseRef.includes('blessing')) {
+            return `The tafsir suggests this verse is a 'key to increase.' Looking at your reflection on gratitude, how does the scholarly context—"${tafsirText.substring(0, 150)}..."—reveal even deeper layers of Allah's favors to you?`;
+          }
+
+          if (lowercaseRef.includes('fear') || lowercaseRef.includes('anxious') || lowercaseRef.includes('worried')) {
+            return `In the classical view, this passage serves as a 'shield for the heart.' How does the explanation—"${tafsirText.substring(0, 150)}..."—help you release the specific anxieties you mentioned?`;
+          }
+
+          return `Reflecting on what you wrote through the lens of Ibn Kathir: "${tafsirText.substring(0, 200)}..." — How does this classical perspective deepen your personal connection to ${verseKey}?`;
         }
       }
     } catch (error) {
@@ -175,16 +189,16 @@ export const mcpService = {
     }
 
     const contextualQuestions: Record<string, string> = {
-      '1:1': 'How does calling upon "Al-Rahman" (The Most Merciful) change your understanding of Allah\'s mercy?',
-      '2:153': 'How can patience become an act of worship in your daily life?',
-      '94:5': 'Can you identify a recent hardship that was followed by ease?',
-      '2:255': 'How does Ayat al-Kursi reassure you in difficult moments?',
-      '3:134': 'When you feel anger rising, what specific actions can you take to restrain it?',
-      '14:7': 'In what ways has Allah already shown gratitude for your gratitude?',
-      '13:28': 'How does intentionally remembering Allah bring peace to your heart?'
+      '1:1': 'How does calling upon "Al-Rahman" (The Most Merciful) change your understanding of Allah\'s mercy in your current state?',
+      '2:153': 'If patience is a form of light, how is Allah illuminated your path through the "Sabr" you mentioned?',
+      '94:5': 'Ibn Kathir notes that "ease" is mentioned twice to overpower one "hardship." Can you see that ease manifesting in your reflection?',
+      '2:255': 'The "Kursi" represents Allah\'s absolute knowledge. How does His knowing your inner thoughts bring comfort to the situation you described?',
+      '3:134': 'The verse describes those who "swallow" their anger. How does that visual metaphor apply to the situation you are navigating?',
+      '14:7': 'Gratitude is a preservation of current blessings and a magnet for future ones. What specific blessing are you most afraid of losing if you aren\'t grateful?',
+      '13:28': 'The heart\'s "rest" is a profound state of tranquility. Is there a part of your reflection that still feels restless, and how can this verse specifically calm it?'
     };
 
     return contextualQuestions[verseKey] || 
-      `How does the wisdom of ${verseKey} apply to your reflection on "${reflection.substring(0, 30)}..."?`;
+      `How does the scriptural wisdom of verse ${verseKey} specifically speak to the "whispers" you recorded in your journal?`;
   }
 };

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Search, BookOpen, PenTool, Sparkles, Clock } from 'lucide-react';
 import { mcpService } from '../services/mcpService';
 import { quranApi } from '../services/quranApi';
@@ -13,6 +13,20 @@ export const Home = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [playlist, setPlaylist] = useState<PlaylistItem[]>([]);
   const [showJournalTrigger, setShowJournalTrigger] = useState(false);
+  const journalRef = useRef<HTMLDivElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (playlist.length > 0 && resultsRef.current) {
+      resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [playlist]);
+
+  useEffect(() => {
+    if (showJournalTrigger && journalRef.current) {
+      journalRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [showJournalTrigger]);
 
   const handleMoodSubmit = async (e?: React.FormEvent, manualMood?: string) => {
     if (e) e.preventDefault();
@@ -99,6 +113,7 @@ export const Home = () => {
       <AnimatePresence>
         {playlist.length > 0 && (
           <motion.section 
+            ref={resultsRef}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
@@ -115,6 +130,7 @@ export const Home = () => {
       {/* Journal Prompt */}
       {showJournalTrigger && (
         <motion.section 
+          ref={journalRef}
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center"

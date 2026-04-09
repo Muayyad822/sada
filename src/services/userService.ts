@@ -8,7 +8,6 @@ const USER_API_BASE = 'https://api.quran.com/api/v4';
 
 const STORAGE_KEYS = {
   REFLCTIONS: 'sada_reflections',
-  STATS: 'sada_stats',
   AUTH: 'sada_auth',
   ACTIVITY: 'sada_activity'
 };
@@ -31,6 +30,8 @@ export interface UserStats {
   tilawah_minutes: number;
   tadabbur_minutes: number;
   ramadan_momentum: number;
+  reflection_count: number;
+  weekly_minutes: number;
 }
 
 export interface ActivityLog {
@@ -145,9 +146,7 @@ export const userService = {
       console.log('API fetch failed, using localStorage:', error);
     }
 
-    return getLocalStorage(STORAGE_KEYS.REFLCTIONS, [
-      { id: 1, verse_key: '94:5', reflection_text: 'Comforting in difficult times.', created_at: '2026-04-01T12:00:00Z' }
-    ]);
+    return getLocalStorage(STORAGE_KEYS.REFLCTIONS, []);
   },
 
   /**
@@ -172,8 +171,7 @@ export const userService = {
       console.log('Streak API failed:', error);
     }
 
-    const stats = getLocalStorage<UserStats | null>(STORAGE_KEYS.STATS, null);
-    return stats?.streak_count || 0;
+    return 0;
   },
 
   /**
@@ -209,9 +207,7 @@ export const userService = {
   /**
    * Fetch a user's stats for the Habit & Growth Dashboard.
    */
-  getUserStats: async (): Promise<UserStats> => {
-    const stored = getLocalStorage(STORAGE_KEYS.STATS, null) as UserStats | null;
-    
+  getUserStats: async (): Promise<UserStats> => {    
     const activities = getLocalStorage(STORAGE_KEYS.ACTIVITY, [] as ActivityLog[]);
     const tilawahMinutes = activities
       .filter(a => a.type === 'tilawah')
@@ -227,14 +223,25 @@ export const userService = {
 
     const streakCount = await userService.getStreakCount();
 
+    const reflections = getLocalStorage(STORAGE_KEYS.REFLCTIONS, [] as Reflection[]);
+    const weeklyMinutes = activities
+      .filter(a => {
+        const date = new Date(a.created_at);
+        const now = new Date();
+        const diff = now.getTime() - date.getTime();
+        return diff < 7 * 24 * 60 * 60 * 1000;
+      })
+      .reduce((sum, a) => sum + a.minutes, 0);
+
     const stats: UserStats = {
-      streak_count: stored?.streak_count || streakCount || 5,
-      tilawah_minutes: stored?.tilawah_minutes || tilawahMinutes || 120,
-      tadabbur_minutes: stored?.tadabbur_minutes || tadabburMinutes || 45,
-      ramadan_momentum: stored?.ramadan_momentum || ramadanMomentum || 85
+      streak_count: streakCount,
+      tilawah_minutes: tilawahMinutes,
+      tadabbur_minutes: tadabburMinutes,
+      ramadan_momentum: ramadanMomentum,
+      reflection_count: reflections.length,
+      weekly_minutes: weeklyMinutes
     };
 
-    setLocalStorage(STORAGE_KEYS.STATS, stats);
     return stats;
   },
 
@@ -250,5 +257,38 @@ export const userService = {
    */
   clearAuth: (): void => {
     localStorage.removeItem(STORAGE_KEYS.AUTH);
+  },
+
+  /**
+   * Generate the OAuth login URL.
+   */
+  getLoginUrl: (): string => {
+    const clientId = import.meta.env.VITE_QF_CLIENT_ID;
+    const redirectUri = `${window.location.origin}/oauth/callback`;
+    return `https://oauth2.quran.foundation/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=read+write`;
+  },
+
+  /**
+   * Get the current user's display name or fallback.
+   */
+  getUserName: (): string => {
+    const auth = getLocalStorage<AuthData | null>(STORAGE_KEYS.AUTH, null);
+    if (!auth?.token) return 'Seeker';
+    
+    try {
+      // Basic JWT decode if token is JWT, otherwise fallback
+      const payload = JSON.parse(atob(auth.token.split('.')[1]));
+      return payload.name || payload.username || 'Traveler';
+    } catch {
+      return 'Traveler';
+    }
+  },
+
+  /**
+   * Check if user is authenticated.
+   */
+  isAuthenticated: (): boolean => {
+    const auth = getLocalStorage<AuthData | null>(STORAGE_KEYS.AUTH, null);
+    return !!auth?.token;
   }
 };

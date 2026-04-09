@@ -23,6 +23,13 @@ export const Journal = ({ verseKey, onSaved }: JournalProps) => {
   const [isSaved, setIsSaved] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const aiQuestionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (aiQuestion && aiQuestionRef.current) {
+      aiQuestionRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [aiQuestion]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -224,6 +231,7 @@ export const Journal = ({ verseKey, onSaved }: JournalProps) => {
 
             {aiQuestion && (
               <motion.div 
+                ref={aiQuestionRef}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="p-10 bg-gradient-to-br from-sada-sand-200/5 to-transparent border-2 border-sada-sand-200/10 rounded-3xl shadow-inner relative overflow-hidden"

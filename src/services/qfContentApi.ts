@@ -98,4 +98,17 @@ export class QFContentService {
     const data = await response.json();
     return data.chapters;
   }
+
+  /**
+   * Search for verses/topics (Search API)
+   */
+  static async search(query: string) {
+    const response = await this.fetchWithAuth(`/content/api/v4/search?q=${encodeURIComponent(query)}&size=10`);
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ message: 'Unknown error' }));
+        throw new Error(error.message || `API Request failed with status ${response.status}`);
+    }
+    const data = await response.json();
+    return data.search?.results || [];
+  }
 }
