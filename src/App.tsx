@@ -1,5 +1,5 @@
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Headphones, PenTool, LayoutDashboard, Sparkles } from 'lucide-react';
+import { Headphones, PenTool, LayoutDashboard } from 'lucide-react';
 import { Home } from './pages/Home';
 import { Reflection } from './pages/Reflection';
 import { Stats } from './pages/Stats';
