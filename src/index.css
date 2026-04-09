@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Amiri:wght@400;700&display=swap');
+
+@theme {
+  /* Core Brand Palette */
+  --color-sada-emerald-950: #022c22;
+  --color-sada-emerald-900: #064E3B;
+  --color-sada-emerald-800: #065F46;
+  --color-sada-emerald-700: #047857;
+  
+  --color-sada-sand-200: #FDE68A;
+  --color-sada-sand-100: #FEF3C7;
+  --color-sada-sand-50: #FFFBEB;
+  
+  --color-sada-slate-950: #020617;
+  --color-sada-slate-900: #0F172A;
+  --color-sada-slate-800: #1E293B;
+
+  --font-arabic: "Amiri", serif;
+  --font-ui: "Inter", sans-serif;
+
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+}
+
+@layer base {
+  body {
+    @apply bg-sada-slate-950 text-sada-sand-50 font-ui;
+    -webkit-font-smoothing: antialiased;
+  }
+  
+  h1, h2, h3, h4, .quran-text {
+    @apply font-arabic;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-sada-slate-900/60 backdrop-blur-2xl border border-sada-sand-100/10 shadow-2xl rounded-2xl;
+  }
+  
+  .btn-primary {
+    @apply bg-sada-sand-200 text-sada-emerald-950 font-bold px-8 py-4 rounded-full transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[0_0_20px_rgba(253,230,138,0.4)];
+  }
+
+  .hero-input-container {
+    @apply flex items-center bg-sada-slate-900 border-2 border-sada-sand-100/10 rounded-full p-2 transition-all duration-300 focus-within:border-sada-sand-100/30 focus-within:shadow-[0_0_0_4px_rgba(253,230,138,0.05)];
+  }
+
+  .hero-input {
+    @apply flex-1 bg-transparent border-none px-6 py-4 text-xl text-sada-sand-50 outline-none placeholder:text-sada-sand-100/20;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-sada-slate-950;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-sada-emerald-900/50 rounded-full hover:bg-sada-emerald-800/80 transition-colors;
+}
