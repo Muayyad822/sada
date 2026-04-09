@@ -41,10 +41,8 @@ const Navbar = () => {
 
 const Header = () => (
   <header className="flex justify-between items-center py-6 px-6 md:px-12 border-b border-sada-sand-100/5 bg-sada-slate-950/50 backdrop-blur-md sticky top-0 z-40">
-    <div className="flex items-center gap-4 group cursor-pointer">
-      <div className="w-10 h-10 bg-sada-sand-200 rounded-xl flex items-center justify-center -rotate-12 transition-transform group-hover:rotate-0 duration-300 shadow-lg shadow-sada-sand-200/20">
-        <Sparkles size={20} className="text-sada-emerald-900" />
-      </div>
+      <div className="flex items-center gap-4 group cursor-pointer">
+      <img src="/logo.png" alt="SADA Logo" className="w-10 h-10 rounded-xl flex items-center justify-center -rotate-12 transition-transform group-hover:rotate-0 duration-300 shadow-lg shadow-sada-sand-200/20 object-cover" />
       <div>
         <h1 className="text-2xl font-black text-sada-sand-50 tracking-tighter leading-none">SADA</h1>
         <p className="text-[10px] font-bold text-sada-sand-200/40 uppercase tracking-[0.2em] mt-1">Echoes of Quran</p>
