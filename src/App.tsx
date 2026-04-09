@@ -7,6 +7,8 @@ import { Stats } from './pages/Stats';
 import { Privacy } from './pages/Privacy';
 import { Terms } from './pages/Terms';
 import { About } from './pages/About';
+import { NotFound } from './pages/NotFound';
+import { Callback } from './pages/Callback';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -84,6 +86,9 @@ function App() {
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/about" element={<About />} />
+            <Route path="/oauth/callback" element={<Callback />} />
+            <Route path="/callback" element={<Callback />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
         <Navbar />

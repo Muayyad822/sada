@@ -41,7 +41,7 @@ export const Terms = () => {
         <section>
           <h2 className="text-lg font-bold text-sada-sand-50 mb-4">Contact</h2>
           <p className="leading-relaxed">
-            For questions about these terms, contact us at terms@sada.app
+            For questions about these terms, <a href="mailto:muayyad822@gmail.com" className="text-sada-sand-200 hover:text-sada-sand-50 transition-colors underline">contact developer</a>
           </p>
         </section>
       </div>

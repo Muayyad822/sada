@@ -34,7 +34,7 @@ export const Privacy = () => {
         <section>
           <h2 className="text-lg font-bold text-sada-sand-50 mb-4">Contact</h2>
           <p className="leading-relaxed">
-            For privacy concerns, contact us at privacy@sada.app
+            For privacy concerns, <a href="mailto:muayyad822@gmail.com" className="text-sada-sand-200 hover:text-sada-sand-50 transition-colors underline">contact developer</a>
           </p>
         </section>
       </div>
