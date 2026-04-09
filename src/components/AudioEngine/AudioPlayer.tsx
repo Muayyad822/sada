@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, SkipForward, SkipBack, Volume2, Headphones } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from '../../contexts/ThemeContext';
 
 export interface PlaylistItem {
   verse_key: string;
@@ -16,6 +17,7 @@ interface AudioPlayerProps {
 }
 
 export const AudioPlayer = ({ playlist, onComplete }: AudioPlayerProps) => {
+  const { theme } = useTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -73,7 +75,7 @@ export const AudioPlayer = ({ playlist, onComplete }: AudioPlayerProps) => {
   if (!currentItem) return null;
 
   return (
-    <div className="glass-card p-10 md:p-16 w-full shadow-[0_32px_64px_-12px_rgba(0,0,0,0.6)] relative overflow-hidden group/player">
+    <div className="glass-card p-10 md:p-16 w-full relative overflow-hidden group/player">
       {/* Background Decor */}
       <div className="absolute top-0 right-0 p-8 opacity-5 group-hover/player:opacity-10 transition-opacity">
         <Headphones size={120} />
@@ -97,7 +99,7 @@ export const AudioPlayer = ({ playlist, onComplete }: AudioPlayerProps) => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="absolute inset-0 z-50 flex items-center justify-center p-8 text-center bg-sada-slate-950/90 backdrop-blur-md rounded-2xl"
+              className="absolute inset-0 z-50 flex items-center justify-center p-8 text-center bg-sada-slate-950/95 backdrop-blur-2xl rounded-2xl bg-dark"
             >
               <div className="space-y-4">
                  <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 mx-auto">
@@ -121,7 +123,7 @@ export const AudioPlayer = ({ playlist, onComplete }: AudioPlayerProps) => {
               <div className="w-2 h-2 rounded-full bg-sada-sand-200 animate-pulse" />
               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-sada-sand-200/60">Live Recitation</span>
            </div>
-           <span className="text-[10px] font-black uppercase tracking-[0.3em] text-sada-sand-100/30">{currentIndex + 1} / {playlist.length} Verses</span>
+           <span className="text-[10px] font-black uppercase tracking-[0.3em] text-sada-sand-100/60 transition-colors">{currentIndex + 1} / {playlist.length} Verses</span>
         </div>
 
         {/* Verse Content */}
@@ -153,14 +155,14 @@ export const AudioPlayer = ({ playlist, onComplete }: AudioPlayerProps) => {
         <div className="w-full max-w-xl mx-auto space-y-10">
           {/* Progress Bar Container */}
           <div className="space-y-3">
-            <div className="h-2 w-full bg-sada-slate-950 rounded-full overflow-hidden border border-white/5 relative group/bar cursor-pointer">
+            <div className="h-2 w-full progress-track rounded-full overflow-hidden border border-white/5 relative group/bar cursor-pointer bg-dark transition-colors duration-500">
               <motion.div 
-                className="h-full bg-gradient-to-r from-sada-emerald-700 to-sada-sand-200 rounded-full shadow-[0_0_10px_rgba(253,230,138,0.3)]" 
+                className="h-full bg-gradient-to-r from-sada-emerald-700 to-sada-sand-200 rounded-full shadow-[0_0_15px_rgba(4,120,87,0.3)]" 
                 animate={{ width: `${progress}%` }}
                 transition={{ duration: 0.1 }}
               />
             </div>
-            <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-sada-sand-200/30">
+            <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-sada-sand-200/50 transition-colors">
               <span>{formatTime(audioRef.current?.currentTime || 0)}</span>
               <span>{formatTime(duration)}</span>
             </div>
@@ -170,31 +172,31 @@ export const AudioPlayer = ({ playlist, onComplete }: AudioPlayerProps) => {
             <button 
               onClick={() => currentIndex > 0 && setCurrentIndex(currentIndex - 1)} 
               disabled={currentIndex === 0}
-              className="p-4 text-sada-sand-100/30 disabled:opacity-30 hover:text-sada-sand-200 transition-all hover:scale-110"
+              className="p-4 text-sada-sand-100/60 disabled:opacity-20 hover:text-sada-sand-200 transition-all hover:scale-110"
             >
               <SkipBack size={32} fill="currentColor" />
             </button>
             
             <button 
               onClick={() => setIsPlaying(!isPlaying)}
-              className="w-24 h-24 bg-sada-sand-200 text-sada-emerald-950 rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-[0_0_40px_rgba(253,230,138,0.2)] hover:shadow-sada-sand-200/40"
+              className="w-24 h-24 bg-sada-sand-200 text-sada-emerald-950 rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-xl hover:shadow-sada-sand-200/40"
             >
-              {isPlaying ? <Pause size={42} fill="currentColor" /> : <Play size={42} className="ml-1" fill="currentColor" />}
+              {isPlaying ? <Pause size={42} fill={theme === 'dark' ? "currentColor" : "white"} /> : <Play size={42} className="ml-1" fill={theme === 'dark' ? "currentColor" : "white"} />}
             </button>
 
             <button 
               onClick={() => currentIndex < playlist.length - 1 && setCurrentIndex(currentIndex + 1)} 
               disabled={currentIndex === playlist.length - 1}
-              className="p-4 text-sada-sand-100/30 disabled:opacity-30 hover:text-sada-sand-200 transition-all hover:scale-110"
+              className="p-4 text-sada-sand-100/60 disabled:opacity-20 hover:text-sada-sand-200 transition-all hover:scale-110"
             >
               <SkipForward size={32} fill="currentColor" />
             </button>
           </div>
 
-          <div className="flex items-center justify-center gap-3 text-sada-sand-100/20">
+          <div className="flex items-center justify-center gap-3 text-sada-sand-100/40 transition-colors">
              <Volume2 size={16} />
-             <div className="w-32 h-1 bg-sada-slate-950 rounded-full overflow-hidden border border-white/5">
-                <div className="h-full bg-sada-sand-200/20 w-3/4" />
+             <div className="w-32 h-1 progress-track rounded-full overflow-hidden border border-white/5 bg-dark">
+                <div className="h-full bg-sada-emerald-700/40 w-3/4" />
              </div>
           </div>
         </div>

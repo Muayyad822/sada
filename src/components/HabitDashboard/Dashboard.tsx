@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Flame, BarChart3, TrendingUp, Sparkles, User, Award, Clock, Target } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useTheme } from '../../contexts/ThemeContext';
 import { userService } from '../../services/userService';
 import type { UserStats } from '../../services/userService';
 
 export const Dashboard = () => {
+  const { theme } = useTheme();
   const [stats, setStats] = useState<UserStats | null>(null);
 
   useEffect(() => {
@@ -21,14 +23,14 @@ export const Dashboard = () => {
     <div className="flex flex-col gap-10 w-full max-w-6xl mx-auto">
       {/* Header Profile Section */}
       <div className="glass-card p-10 md:p-12 relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-sada-sand-200/5 blur-[100px] -z-10 group-hover:bg-sada-sand-200/10 transition-colors" />
+        <div className={`absolute top-0 right-0 w-64 h-64 blur-[100px] -z-10 transition-colors duration-1000 ${theme === 'dark' ? 'bg-sada-sand-200/5 group-hover:bg-sada-sand-200/10' : 'bg-sada-sand-200/10'}`} />
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative z-10">
           <div className="flex items-center gap-6">
             <motion.div 
               whileHover={{ rotate: 5, scale: 1.05 }}
-              className="w-20 h-20 bg-gradient-to-br from-sada-sand-200 to-sada-sand-100 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-sada-sand-200/20"
+              className={`w-20 h-20 bg-gradient-to-br from-sada-sand-200 to-sada-sand-100 rounded-[2rem] flex items-center justify-center shadow-2xl ${theme === 'dark' ? 'shadow-sada-sand-200/20' : 'shadow-sada-sand-100/10'}`}
             >
-              <User size={40} className="text-sada-emerald-950" />
+              <User size={40} className={theme === 'dark' ? 'text-sada-emerald-950' : 'text-white'} />
             </motion.div>
             <div className="space-y-1">
               <h2 className="text-4xl font-black text-sada-sand-50 tracking-tighter">Salaam, Abdallah</h2>
@@ -42,7 +44,7 @@ export const Dashboard = () => {
           <motion.div 
             initial={{ x: 20, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            className="flex items-center gap-6 px-10 py-6 bg-sada-slate-950/80 rounded-[2.5rem] border-2 border-orange-500/20 shadow-2xl relative group/flame"
+            className="flex items-center gap-6 px-10 py-6 bg-sada-slate-950/80 rounded-[2.5rem] border-2 border-orange-500/20 shadow-2xl relative group/flame bg-dark"
           >
             <div className="relative">
               <Flame size={48} className="text-orange-500 animate-pulse relative z-10" fill="currentColor" />
@@ -54,7 +56,7 @@ export const Dashboard = () => {
             </div>
             <div>
               <span className="block text-4xl font-black text-sada-sand-50 tracking-tighter leading-none">{stats.streak_count} Days</span>
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-400/60 mt-2 block">Ramadan Momentum</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-400 block mt-2">Ramadan Momentum</span>
             </div>
           </motion.div>
         </div>
@@ -65,9 +67,9 @@ export const Dashboard = () => {
         {/* Large Momentum Visualization */}
         <motion.div 
           whileHover={{ y: -5 }}
-          className="lg:col-span-8 glass-card p-12 bg-gradient-to-br from-sada-slate-900/60 to-sada-emerald-900/10 flex flex-col justify-between overflow-hidden relative group/hero"
+          className={`lg:col-span-8 glass-card p-12 flex flex-col justify-between overflow-hidden relative group/hero ${theme === 'dark' ? 'bg-gradient-to-br from-sada-slate-900/60 to-sada-emerald-900/10' : 'bg-gradient-to-br from-sada-slate-900 to-sada-emerald-800/10'}`}
         >
-          <div className="absolute -right-20 -bottom-20 opacity-5 group-hover/hero:opacity-10 transition-all duration-700 group-hover/hero:-translate-y-10 group-hover/hero:-translate-x-10">
+          <div className="absolute -right-20 -bottom-20 opacity-10 transition-all duration-700 group-hover/hero:-translate-y-10 group-hover/hero:-translate-x-10">
             <TrendingUp size={300} />
           </div>
           
@@ -79,13 +81,13 @@ export const Dashboard = () => {
             <div className="space-y-4 mb-12">
                <div className="flex items-baseline gap-4">
                  <span className="text-8xl font-black text-sada-sand-50 tracking-tighter tabular-nums drop-shadow-2xl">{stats.ramadan_momentum}%</span>
-                 <p className="text-sada-sand-100/30 text-lg font-medium italic max-w-xs">Of your post-Ramadan spiritual intensity maintained.</p>
+                 <p className="text-sada-sand-100/50 text-lg font-medium italic max-w-xs transition-colors">Of your post-Ramadan spiritual intensity maintained.</p>
                </div>
             </div>
             
             {/* ProgressBar */}
             <div className="w-full space-y-4">
-              <div className="w-full h-10 bg-sada-slate-950 rounded-[1.5rem] p-2 border border-white/5 shadow-inner">
+              <div className="w-full h-10 progress-track rounded-[1.5rem] p-2 border border-white/5 shadow-inner bg-dark">
                 <motion.div 
                   initial={{ width: 0 }}
                   animate={{ width: `${stats.ramadan_momentum}%` }}
@@ -99,7 +101,7 @@ export const Dashboard = () => {
                   />
                 </motion.div>
               </div>
-              <div className="flex justify-between px-4 text-[10px] font-black text-sada-sand-200/30 uppercase tracking-[0.3em]">
+              <div className="flex justify-between px-4 text-[10px] font-black text-sada-sand-200/50 uppercase tracking-[0.3em] transition-colors">
                  <span>Beginning</span>
                  <span>Illumination</span>
               </div>
@@ -135,7 +137,7 @@ export const Dashboard = () => {
                   </span>
                   <span className="text-2xl font-black text-sada-sand-50 tabular-nums">{stats.tilawah_minutes}m</span>
                 </div>
-                <div className="w-full h-3 bg-sada-slate-950 rounded-full overflow-hidden p-0.5">
+                <div className="w-full h-3 progress-track rounded-full overflow-hidden p-0.5 bg-dark">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: '70%' }}
@@ -152,7 +154,7 @@ export const Dashboard = () => {
                   </span>
                   <span className="text-2xl font-black text-sada-sand-50 tabular-nums">{stats.tadabbur_minutes}m</span>
                 </div>
-                <div className="w-full h-3 bg-sada-slate-950 rounded-full overflow-hidden p-0.5">
+                <div className="w-full h-3 progress-track rounded-full overflow-hidden p-0.5 bg-dark">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: '30%' }}
@@ -165,17 +167,17 @@ export const Dashboard = () => {
           
           <div className="pt-10 mt-10 border-t border-sada-sand-100/5 flex justify-between items-center group">
              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-black text-sada-sand-200/30 uppercase tracking-[0.3em]">Total Focus</span>
+                <span className="text-[10px] font-black text-sada-sand-200/50 uppercase tracking-[0.3em] transition-colors">Total Focus</span>
                 <div className="flex items-baseline gap-2">
                    <span className="text-4xl font-black text-sada-sand-50 tracking-tighter">{stats.tilawah_minutes + stats.tadabbur_minutes}</span>
-                   <span className="text-xs font-bold text-sada-sand-100/20 uppercase tracking-widest">Minutes</span>
+                   <span className="text-xs font-bold text-sada-sand-100/40 uppercase tracking-widest transition-colors">Minutes</span>
                 </div>
              </div>
              <motion.div 
                whileHover={{ rotate: 15 }}
                className="p-4 bg-sada-sand-200/5 rounded-2xl group-hover:bg-sada-sand-200/10 transition-colors"
              >
-                <Award size={32} className="text-sada-sand-200/30" />
+                <Award size={32} className="text-sada-sand-200/50 transition-colors" />
              </motion.div>
           </div>
         </motion.div>
@@ -195,10 +197,10 @@ export const Dashboard = () => {
                transition={{ delay: 0.1 * i }}
                className="glass-card p-8 group border-transparent hover:border-sada-sand-200/10 transition-colors"
              >
-                <div className="text-sada-sand-100/20 mb-6 group-hover:text-sada-sand-200 transition-colors">
+                <div className="text-sada-sand-100/40 mb-6 group-hover:text-sada-sand-200 transition-colors">
                   {item.icon}
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-sada-sand-200/30 block mb-1">{item.label}</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-sada-sand-200/50 block mb-1 transition-colors">{item.label}</span>
                 <span className="text-2xl font-black text-sada-sand-50 tracking-tight">{item.value}</span>
              </motion.div>
            ))}

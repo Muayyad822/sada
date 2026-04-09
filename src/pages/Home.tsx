@@ -5,8 +5,10 @@ import { quranApi } from '../services/quranApi';
 import { AudioPlayer } from '../components/AudioEngine/AudioPlayer';
 import type { PlaylistItem } from '../components/AudioEngine/AudioPlayer';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from '../contexts/ThemeContext';
 
 export const Home = () => {
+  const { theme } = useTheme();
   const [mood, setMood] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [playlist, setPlaylist] = useState<PlaylistItem[]>([]);
@@ -57,7 +59,7 @@ export const Home = () => {
             How are you feeling <br/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-sada-sand-200 to-sada-sand-100">spiritually</span> today?
           </h1>
-          <p className="text-sada-sand-100/40 text-lg md:text-xl font-medium mt-6 max-w-2xl mx-auto">
+          <p className="text-sada-sand-100/60 text-lg md:text-xl font-medium mt-6 max-w-2xl mx-auto transition-colors">
             Connect your current state with the timeless wisdom of the Quran.
           </p>
         </motion.div>
@@ -111,7 +113,7 @@ export const Home = () => {
           animate={{ opacity: 1, y: 0 }}
           className="text-center"
         >
-          <div className="glass-card p-12 max-w-2xl mx-auto border-sada-sand-200/20 bg-sada-emerald-900/10 hover:bg-sada-emerald-900/20 transition-colors">
+          <div className={`glass-card p-12 max-w-2xl mx-auto border-sada-sand-200/20 transition-colors duration-500 ${theme === 'dark' ? 'bg-sada-emerald-900/10 hover:bg-sada-emerald-900/20' : 'bg-sada-emerald-800/5 hover:bg-sada-emerald-800/10'}`}>
             <BookOpen size={48} className="text-sada-sand-200 mx-auto mb-6" />
             <h3 className="text-3xl font-black text-sada-sand-50 mb-4 tracking-tight">Deepen Your Reflection</h3>
             <p className="text-sada-sand-100/60 text-lg mb-10 italic font-medium">
@@ -133,15 +135,15 @@ export const Home = () => {
         <section className="space-y-8 pt-12">
           <div className="flex items-center gap-4">
             <div className="h-px bg-sada-sand-100/10 flex-1" />
-            <span className="text-[10px] font-black text-sada-sand-100/40 uppercase tracking-[0.3em] whitespace-nowrap">Explore by State</span>
+            <span className="text-[10px] font-black text-sada-sand-100/60 uppercase tracking-[0.3em] whitespace-nowrap transition-colors">Explore by State</span>
             <div className="h-px bg-sada-sand-100/10 flex-1" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { label: 'Grateful', icon: <Sparkles className="text-orange-300" /> },
-              { label: 'Anxious', icon: <Clock className="text-blue-300" /> },
-              { label: 'Searching', icon: <Search className="text-emerald-300" /> },
-              { label: 'Overwhelmed', icon: <BookOpen className="text-purple-300" /> }
+              { label: 'Grateful', icon: <Sparkles className={theme === 'dark' ? "text-orange-300" : "text-orange-600"} /> },
+              { label: 'Anxious', icon: <Clock className={theme === 'dark' ? "text-blue-300" : "text-blue-600"} /> },
+              { label: 'Searching', icon: <Search className={theme === 'dark' ? "text-emerald-300" : "text-emerald-600"} /> },
+              { label: 'Overwhelmed', icon: <BookOpen className={theme === 'dark' ? "text-purple-300" : "text-purple-600"} /> }
             ].map((m, idx) => (
               <motion.button 
                 key={m.label}
@@ -154,7 +156,7 @@ export const Home = () => {
                 <div className="mb-6 opacity-30 group-hover:opacity-100 transition-opacity">
                   {m.icon}
                 </div>
-                <span className="block mb-1 text-sada-sand-200/40 text-[10px] font-black uppercase tracking-[0.2em]">Contextual Mood</span>
+                <span className="block mb-1 text-sada-sand-200/60 text-[10px] font-black uppercase tracking-[0.2em] transition-colors">Contextual Mood</span>
                 <span className="text-2xl font-black text-sada-sand-50 tracking-tight group-hover:text-sada-sand-200 transition-colors">{m.label}</span>
               </motion.button>
             ))}

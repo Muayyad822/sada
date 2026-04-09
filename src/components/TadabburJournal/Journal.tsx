@@ -5,6 +5,7 @@ import { mcpService } from '../../services/mcpService';
 import { userService } from '../../services/userService';
 import type { Reflection } from '../../services/userService';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface JournalProps {
   verseKey: string;
@@ -12,6 +13,7 @@ interface JournalProps {
 }
 
 export const Journal = ({ verseKey, onSaved }: JournalProps) => {
+  const { theme } = useTheme();
   const [tafsir, setTafsir] = useState<{ text: string } | null>(null);
   const [verseText, setVerseText] = useState<{ text_uthmani: string; translations: any[] } | null>(null);
   const [reflection, setReflection] = useState('');
@@ -121,7 +123,7 @@ export const Journal = ({ verseKey, onSaved }: JournalProps) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="glass-card p-10 flex flex-col justify-between border-sada-sand-200/5">
           <div className="space-y-6">
-            <div className="flex items-center gap-3 text-sada-sand-200/40">
+            <div className="flex items-center gap-3 text-sada-sand-200/60 transition-colors">
               <BookOpen size={18} />
               <span className="text-[10px] font-black uppercase tracking-[0.3em]">Scriptural Context</span>
             </div>
@@ -136,15 +138,15 @@ export const Journal = ({ verseKey, onSaved }: JournalProps) => {
           </div>
         </div>
 
-        <div className="glass-card p-10 bg-sada-emerald-900/5 border-sada-emerald-800/10">
+        <div className={`glass-card p-10 border-sada-emerald-800/10 transition-colors duration-500 ${theme === 'dark' ? 'bg-sada-emerald-900/5' : 'bg-sada-emerald-800/5'}`}>
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3 text-sada-emerald-700">
               <Quote size={18} className="text-sada-sand-200" />
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-sada-sand-200/40">Classical Tafsir</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-sada-sand-200/60 transition-colors">Classical Tafsir</span>
             </div>
           </div>
           {!tafsir ? (
-            <div className="flex flex-col items-center justify-center gap-4 py-20 text-sada-sand-100/20">
+            <div className="flex flex-col items-center justify-center gap-4 py-20 text-sada-sand-100/40 transition-colors">
               <Loader2 className="animate-spin" size={32} />
               <span className="text-xs font-black uppercase tracking-widest">Illuminating Insights...</span>
             </div>
@@ -164,7 +166,7 @@ export const Journal = ({ verseKey, onSaved }: JournalProps) => {
         <div className="max-w-3xl mx-auto space-y-10">
           <div className="text-center space-y-2">
             <h2 className="text-3xl font-black text-sada-sand-50 tracking-tight">Your Tadabbur Journal</h2>
-            <p className="text-sada-sand-100/40 text-sm font-medium uppercase tracking-widest">Record the whispers of your heart</p>
+            <p className="text-sada-sand-100/60 text-sm font-medium uppercase tracking-widest transition-colors text-center">Record the whispers of your heart</p>
           </div>
 
           <div className="relative group/input">
@@ -173,7 +175,7 @@ export const Journal = ({ verseKey, onSaved }: JournalProps) => {
               onChange={(e) => setReflection(e.target.value)}
               disabled={isSaved}
               placeholder="How does this verse speak to your current state? Write your reflection here..."
-              className="w-full bg-sada-slate-950/50 border-2 border-white/5 rounded-3xl p-10 text-xl text-sada-sand-50 min-h-[250px] outline-none transition-all focus:border-sada-sand-100/20 focus:bg-sada-slate-950 placeholder:text-sada-sand-100/10 resize-none font-medium leading-relaxed shadow-inner"
+              className="w-full bg-sada-slate-950/50 border-2 border-white/5 rounded-3xl p-10 text-xl text-sada-sand-50 min-h-[250px] outline-none transition-all focus:border-sada-sand-100/20 focus:bg-sada-slate-950 placeholder:text-sada-sand-100/20 resize-none font-medium leading-relaxed shadow-inner bg-dark"
             />
             <button 
               type="button"
@@ -182,7 +184,9 @@ export const Journal = ({ verseKey, onSaved }: JournalProps) => {
               className={`absolute bottom-6 right-6 p-4 rounded-full transition-all duration-300 group-hover/input:scale-110 shadow-lg ${
                 isRecording 
                   ? 'bg-red-500 text-white animate-pulse' 
-                  : 'bg-sada-sand-200/5 text-sada-sand-200 hover:bg-sada-sand-200 hover:text-sada-emerald-950'
+                  : theme === 'dark'
+                    ? 'bg-sada-sand-200/5 text-sada-sand-200 hover:bg-sada-sand-200 hover:text-sada-emerald-950'
+                    : 'bg-sada-sand-200/20 text-sada-sand-100 hover:bg-sada-emerald-700 hover:text-white'
               } ${isSaved ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {isRecording ? <MicOff size={24} /> : <Mic size={24} />}
@@ -246,7 +250,7 @@ export const Journal = ({ verseKey, onSaved }: JournalProps) => {
                 animate={{ opacity: 1, scale: 1 }}
                 onClick={handleSave}
                 disabled={isSaving}
-                className="btn-primary w-full py-6 text-xl flex items-center justify-center gap-4 bg-sada-emerald-900 text-sada-sand-50 hover:bg-sada-emerald-800 border border-sada-sand-200/20"
+                className="btn-primary w-full py-6 text-xl flex items-center justify-center gap-4 bg-sada-emerald-900 text-white hover:bg-sada-emerald-800 border border-sada-sand-200/20"
               >
                 {isSaving ? <Loader2 className="animate-spin" /> : <Save size={24} />}
                 <span>{isSaving ? 'Preserving Tadabbur...' : 'Record to Personal Journey'}</span>

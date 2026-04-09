@@ -1,8 +1,10 @@
 import { Settings, Bell, Sparkles, Compass } from 'lucide-react';
 import { Dashboard } from '../components/HabitDashboard/Dashboard';
 import { motion } from 'framer-motion';
+import { useTheme } from '../contexts/ThemeContext';
 
 export const Stats: React.FC = () => {
+  const { theme } = useTheme();
   return (
     <div className="flex flex-col gap-12 py-10 max-w-6xl mx-auto px-6">
       {/* Header */}
@@ -19,10 +21,10 @@ export const Stats: React.FC = () => {
         </div>
         
         <div className="flex gap-4 mb-2">
-           <button className="p-4 bg-sada-slate-900 rounded-2xl text-sada-sand-200 hover:bg-sada-sand-200 hover:text-sada-emerald-950 transition-all duration-300 border border-sada-sand-100/10 shadow-xl group">
+           <button className="p-4 bg-sada-slate-900 rounded-2xl text-sada-sand-200 hover:bg-sada-emerald-700 hover:text-white transition-all duration-300 border border-sada-sand-100/10 soft-shadow group bg-dark">
               <Bell size={24} className="group-hover:rotate-12" />
            </button>
-           <button className="p-4 bg-sada-slate-900 rounded-2xl text-sada-sand-200 hover:bg-sada-sand-200 hover:text-sada-emerald-950 transition-all duration-300 border border-sada-sand-100/10 shadow-xl group">
+           <button className="p-4 bg-sada-slate-900 rounded-2xl text-sada-sand-200 hover:bg-sada-emerald-700 hover:text-white transition-all duration-300 border border-sada-sand-100/10 soft-shadow group bg-dark">
               <Settings size={24} className="group-hover:spin-slow" />
            </button>
         </div>
@@ -37,7 +39,7 @@ export const Stats: React.FC = () => {
       <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <motion.div 
           whileHover={{ y: -5, scale: 1.02 }}
-          className="glass-card p-12 bg-gradient-to-br from-sada-emerald-900/40 to-sada-slate-900 group cursor-pointer border-sada-sand-200/10 hover:border-sada-sand-200/30 transition-all shadow-2xl overflow-hidden relative"
+          className={`glass-card p-12 group cursor-pointer border-sada-sand-200/10 hover:border-sada-sand-200/30 transition-all shadow-2xl overflow-hidden relative ${theme === 'dark' ? 'bg-gradient-to-br from-sada-emerald-900/40 to-sada-slate-900' : 'bg-gradient-to-br from-sada-emerald-800/10 to-sada-slate-900'}`}
         >
           <div className="absolute -right-10 -bottom-10 opacity-5 group-hover:opacity-10 transition-all">
              <Compass size={200} />
@@ -51,7 +53,7 @@ export const Stats: React.FC = () => {
 
         <motion.div 
           whileHover={{ y: -5, scale: 1.02 }}
-          className="glass-card p-12 bg-gradient-to-br from-sada-slate-900 to-sada-emerald-900/40 group cursor-pointer border-sada-sand-200/10 hover:border-sada-sand-200/30 transition-all shadow-2xl overflow-hidden relative"
+          className={`glass-card p-12 group cursor-pointer border-sada-sand-200/10 hover:border-sada-sand-200/30 transition-all shadow-2xl overflow-hidden relative ${theme === 'dark' ? 'bg-gradient-to-br from-sada-slate-900 to-sada-emerald-900/40' : 'bg-gradient-to-br from-sada-slate-900 to-sada-emerald-800/10'}`}
         >
           <div className="absolute -right-10 -bottom-10 opacity-5 group-hover:opacity-10 transition-all">
              <Sparkles size={200} />
