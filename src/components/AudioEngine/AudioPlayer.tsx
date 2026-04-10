@@ -27,12 +27,16 @@ export const AudioPlayer = ({ playlist, onComplete }: AudioPlayerProps) => {
 
   const currentItem = playlist[currentIndex];
 
+  if (!currentItem) {
+    return null;
+  }
+
   useEffect(() => {
     if (audioRef.current) {
       setError(null);
       
       if (isPlaying) {
-        if (!currentItem.audio_url) {
+        if (!currentItem?.audio_url) {
           setError("This verse is currently unavailable in the chosen recitation style.");
           setIsPlaying(false);
           return;
@@ -92,9 +96,9 @@ export const AudioPlayer = ({ playlist, onComplete }: AudioPlayerProps) => {
       </div>
 
       <audio
-        key={currentItem.audio_url}
+        key={currentItem?.audio_url || `verse-${currentIndex}`}
         ref={audioRef}
-        src={currentItem.audio_url}
+        src={currentItem?.audio_url}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleEnded}

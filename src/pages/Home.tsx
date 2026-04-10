@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, BookOpen, PenTool, Sparkles, Clock } from 'lucide-react';
+import { Search, BookOpen, PenTool, Sparkles, Shuffle, Heart, Moon, Sun, Wind, Flame, Shield, Leaf } from 'lucide-react';
 import { mcpService } from '../services/mcpService';
 import { quranApi } from '../services/quranApi';
 import { AudioPlayer } from '../components/AudioEngine/AudioPlayer';
@@ -36,6 +36,13 @@ export const Home = () => {
     setIsSearching(true);
     try {
       const results = await mcpService.semanticSearch(targetMood);
+      
+      if (!results || results.length === 0) {
+        console.warn("No verses found for:", targetMood);
+        setIsSearching(false);
+        return;
+      }
+      
       const items: PlaylistItem[] = await Promise.all(
         results.map(async (res) => {
           const verse = await quranApi.getVerseText(res.verse_key);
@@ -43,8 +50,8 @@ export const Home = () => {
           
           return {
             verse_key: res.verse_key,
-            audio_url: audio.url,
-            text_uthmani: verse.text_uthmani,
+            audio_url: audio.url || '',
+            text_uthmani: verse.text_uthmani || '',
             translation: verse.translations?.[0]?.text || 'Translation unavailable',
             reasoning: res.reasoning
           };
@@ -59,6 +66,57 @@ export const Home = () => {
       setIsSearching(false);
     }
   };
+
+  const handleRandomDiscovery = async () => {
+    setIsSearching(true);
+    try {
+      const results = await mcpService.getRandomVerse();
+      
+      if (!results || results.length === 0) {
+        console.warn("No verses found for random discovery");
+        setIsSearching(false);
+        return;
+      }
+      
+      const items: PlaylistItem[] = await Promise.all(
+        results.map(async (res) => {
+          const verse = await quranApi.getVerseText(res.verse_key);
+          const audio = await quranApi.getVerseAudio(7, res.verse_key);
+          
+          return {
+            verse_key: res.verse_key,
+            audio_url: audio.url || '',
+            text_uthmani: verse.text_uthmani || '',
+            translation: verse.translations?.[0]?.text || 'Translation unavailable',
+            reasoning: res.reasoning
+          };
+        })
+      );
+
+      setPlaylist(items);
+      setShowJournalTrigger(false);
+      setMood('✨ Random Discovery');
+    } catch (error) {
+      console.error("Error creating random playlist:", error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const suggestedMoods = [
+    { label: 'Grateful', icon: <Sparkles className={theme === 'dark' ? "text-orange-300" : "text-orange-600"} />, desc: 'Count your blessings' },
+    { label: 'Anxious', icon: <Wind className={theme === 'dark' ? "text-blue-300" : "text-blue-600"} />, desc: 'Find your calm' },
+    { label: 'Searching', icon: <Search className={theme === 'dark' ? "text-emerald-300" : "text-emerald-600"} />, desc: 'Seek guidance' },
+    { label: 'Overwhelmed', icon: <BookOpen className={theme === 'dark' ? "text-purple-300" : "text-purple-600"} />, desc: 'Find your rest' },
+    { label: 'Lazy', icon: <Leaf className={theme === 'dark' ? "text-green-300" : "text-green-600"} />, desc: 'Find motivation' },
+    { label: 'Lonely', icon: <Heart className={theme === 'dark' ? "text-rose-300" : "text-rose-600"} />, desc: 'Feel His presence' },
+    { label: 'Tired', icon: <Moon className={theme === 'dark' ? "text-indigo-300" : "text-indigo-600"} />, desc: 'Renew your strength' },
+    { label: 'Confused', icon: <Sun className={theme === 'dark' ? "text-yellow-300" : "text-yellow-600"} />, desc: 'Find clarity' },
+    { label: 'Disappointed', icon: <Flame className={theme === 'dark' ? "text-red-300" : "text-red-600"} />, desc: 'Rediscover hope' },
+    { label: 'Lost', icon: <Shield className={theme === 'dark' ? "text-teal-300" : "text-teal-600"} />, desc: 'Find your path' },
+    { label: 'Guilty', icon: <Sparkles className={theme === 'dark' ? "text-amber-300" : "text-amber-600"} />, desc: 'Find forgiveness' },
+    { label: 'Hopeful', icon: <Sparkles className={theme === 'dark' ? "text-cyan-300" : "text-cyan-600"} />, desc: 'Embrace the light' }
+  ];
 
   return (
     <div className="flex flex-col gap-12 max-w-6xl mx-auto">
@@ -89,7 +147,7 @@ export const Home = () => {
             type="text"
             value={mood}
             onChange={(e) => setMood(e.target.value)}
-            placeholder="Grateful, Anxious..."
+            placeholder="Feeling a bit lost, anxious, grateful..."
             className="hero-input"
           />
           <div className="flex-shrink-0 w-auto self-center">
@@ -160,26 +218,41 @@ export const Home = () => {
             <span className="text-[10px] font-black text-sada-sand-100/60 uppercase tracking-[0.3em] whitespace-nowrap transition-colors">Explore by State</span>
             <div className="h-px bg-sada-sand-100/10 flex-1" />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { label: 'Grateful', icon: <Sparkles className={theme === 'dark' ? "text-orange-300" : "text-orange-600"} /> },
-              { label: 'Anxious', icon: <Clock className={theme === 'dark' ? "text-blue-300" : "text-blue-600"} /> },
-              { label: 'Searching', icon: <Search className={theme === 'dark' ? "text-emerald-300" : "text-emerald-600"} /> },
-              { label: 'Overwhelmed', icon: <BookOpen className={theme === 'dark' ? "text-purple-300" : "text-purple-600"} /> }
-            ].map((m, idx) => (
+          
+          {/* Random Discovery Button */}
+          <div className="flex justify-center">
+            <motion.button
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1 }}
+              onClick={handleRandomDiscovery}
+              disabled={isSearching}
+              className="glass-card px-8 py-4 group flex items-center gap-3 hover:bg-sada-sand-200/5 hover:border-sada-sand-200/30 transition-all"
+            >
+              <Shuffle size={20} className={theme === 'dark' ? "text-purple-300" : "text-purple-600"} />
+              <div className="text-left">
+                <span className="block text-sada-sand-200/60 text-[10px] font-black uppercase tracking-[0.2em] transition-colors">Feeling Adventurous?</span>
+                <span className="text-lg font-black text-sada-sand-50 tracking-tight group-hover:text-sada-sand-200 transition-colors">Random Discovery</span>
+              </div>
+            </motion.button>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {suggestedMoods.map((m, idx) => (
               <motion.button 
                 key={m.label}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * idx }}
+                transition={{ delay: 0.1 + (idx * 0.05) }}
                 onClick={() => { setMood(m.label); handleMoodSubmit(undefined, m.label); }}
-                className="glass-card p-8 group hover:bg-sada-sand-200/5 hover:border-sada-sand-200/20 transition-all text-left"
+                className="glass-card p-4 sm:p-6 group hover:bg-sada-sand-200/5 hover:border-sada-sand-200/20 transition-all text-left"
               >
-                <div className="mb-6 opacity-30 group-hover:opacity-100 transition-opacity">
+                <div className="mb-3 opacity-40 group-hover:opacity-100 transition-opacity">
                   {m.icon}
                 </div>
-                <span className="block mb-1 text-sada-sand-200/60 text-[10px] font-black uppercase tracking-[0.2em] transition-colors">Contextual Mood</span>
-                <span className="text-2xl font-black text-sada-sand-50 tracking-tight group-hover:text-sada-sand-200 transition-colors">{m.label}</span>
+                <span className="block mb-1 text-sada-sand-200/60 text-[9px] font-black uppercase tracking-[0.15em] transition-colors">Spiritual Antidote</span>
+                <span className="block text-xl font-black text-sada-sand-50 tracking-tight group-hover:text-sada-sand-200 transition-colors mb-1">{m.label}</span>
+                <span className="text-xs text-sada-sand-100/50 group-hover:text-sada-sand-100/70 transition-colors">{m.desc}</span>
               </motion.button>
             ))}
           </div>
