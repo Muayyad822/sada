@@ -7,6 +7,10 @@ export const Reflection: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const verseKey = searchParams.get('verse') || '1:1';
+  const initialContext = {
+    feeling: searchParams.get('feeling') || '',
+    echo: searchParams.get('echo') || ''
+  };
 
   return (
     <motion.div 
@@ -43,6 +47,7 @@ export const Reflection: React.FC = () => {
       <section>
         <Journal 
           verseKey={verseKey} 
+          initialContext={initialContext}
           onSaved={() => {
             console.log("Reflection saved!");
           }}

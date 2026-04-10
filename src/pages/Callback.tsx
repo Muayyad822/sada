@@ -8,15 +8,51 @@ export const Callback = () => {
   const [status, setStatus] = useState('Processing...');
 
   useEffect(() => {
-    const token = searchParams.get('token');
-    const clientId = searchParams.get('client_id');
-    
-    if (token) {
-      userService.setAuth(token, clientId || undefined);
-      setStatus('Authentication successful!');
-      setTimeout(() => navigate('/'), 1500);
+    const code = searchParams.get('code');
+    const state = searchParams.get('state');
+    const savedState = sessionStorage.getItem('oauth_state');
+    const codeVerifier = sessionStorage.getItem('code_verifier');
+
+    if (state !== savedState) {
+      setStatus('Invalid state - possible CSRF attack');
+      return;
+    }
+
+    if (code) {
+      const clientId = import.meta.env.VITE_QF_CLIENT_ID;
+      const redirectUri = `${window.location.origin}/oauth/callback`;
+      const authUrl = import.meta.env.VITE_QF_AUTH_URL || 'https://oauth2.quran.foundation';
+
+      fetch(`${authUrl}/oauth2/token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          client_id: clientId,
+          code,
+          redirect_uri: redirectUri,
+          code_verifier: codeVerifier || '',
+        }),
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.access_token) {
+            userService.setAuth(data.access_token, clientId);
+            sessionStorage.removeItem('oauth_state');
+            sessionStorage.removeItem('code_verifier');
+            setStatus('Authentication successful!');
+            setTimeout(() => navigate('/'), 1500);
+          } else {
+            setStatus('Authentication failed: ' + (data.error || 'Unknown error'));
+          }
+        })
+        .catch(err => {
+          setStatus('Authentication failed: ' + err.message);
+        });
     } else {
-      setStatus('Authentication failed');
+      setStatus('Authentication failed - no code received');
     }
   }, [searchParams, navigate]);
 

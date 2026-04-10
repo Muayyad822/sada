@@ -1,10 +1,31 @@
-import { Settings, Bell, Sparkles, Compass } from 'lucide-react';
+import { Settings, Bell, Sparkles, Compass, MapPin } from 'lucide-react';
 import { Dashboard } from '../components/HabitDashboard/Dashboard';
 import { motion } from 'framer-motion';
 import { useTheme } from '../contexts/ThemeContext';
+import { userService } from '../services/userService';
+import { useEffect, useState } from 'react';
 
 export const Stats: React.FC = () => {
   const { theme } = useTheme();
+  const [themeStats, setThemeStats] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    setThemeStats(userService.getThemeStats());
+  }, []);
+
+  const getThemeColor = (themeName: string) => {
+    const colors: Record<string, string> = {
+      Sabr: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
+      Shukr: 'text-orange-400 bg-orange-400/10 border-orange-400/20',
+      Rahmah: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+      Hidayah: 'text-teal-400 bg-teal-400/10 border-teal-400/20',
+      Tawakkul: 'text-amber-400 bg-amber-400/10 border-amber-400/20',
+      Inshirah: 'text-rose-400 bg-rose-400/10 border-rose-400/20',
+      Sakinah: 'text-indigo-400 bg-indigo-400/10 border-indigo-400/20',
+    };
+    return colors[themeName] || 'text-sada-sand-200 bg-white/5 border-white/10';
+  };
+
   return (
     <div className="flex flex-col gap-12 py-10 max-w-6xl mx-auto px-6">
       {/* Header */}
@@ -33,6 +54,45 @@ export const Stats: React.FC = () => {
       {/* Stats Breakdown */}
       <section className="mt-10">
         <Dashboard />
+      </section>
+
+      {/* Spiritual Landscape */}
+      <section className="space-y-8">
+        <div className="flex items-center gap-4">
+          <div className="h-px bg-sada-sand-100/10 flex-1" />
+          <span className="text-[10px] font-black text-sada-sand-100/60 uppercase tracking-[0.3em] whitespace-nowrap">Landscape of the Heart</span>
+          <div className="h-px bg-sada-sand-100/10 flex-1" />
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+          {Object.entries(themeStats).length > 0 ? (
+            Object.entries(themeStats).map(([name, count], idx) => (
+              <motion.div
+                key={name}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: idx * 0.1 }}
+                className={`glass-card p-6 flex flex-col items-center justify-center text-center gap-4 border ${getThemeColor(name)}`}
+              >
+                <div className="text-3xl font-black mb-1">{count}</div>
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">{name}</div>
+                <div className="w-full h-1 bg-current opacity-20 rounded-full overflow-hidden">
+                   <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: '100%' }}
+                    transition={{ duration: 1, delay: idx * 0.1 }}
+                    className="h-full bg-current"
+                   />
+                </div>
+              </motion.div>
+            ))
+          ) : (
+            <div className="col-span-full py-12 text-center text-sada-sand-100/20">
+              <MapPin size={48} className="mx-auto mb-4 opacity-5" />
+              <p className="font-medium italic">Begin your emotional journey to map your spiritual landscape.</p>
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Deep Dive Action Grid */}

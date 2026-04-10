@@ -9,10 +9,11 @@ import { useTheme } from '../../contexts/ThemeContext';
 
 interface JournalProps {
   verseKey: string;
+  initialContext?: { feeling: string; echo: string };
   onSaved?: (reflection: Reflection) => void;
 }
 
-export const Journal = ({ verseKey, onSaved }: JournalProps) => {
+export const Journal = ({ verseKey, onSaved, initialContext }: JournalProps) => {
   const { theme } = useTheme();
   const [tafsir, setTafsir] = useState<{ text: string } | null>(null);
   const [verseText, setVerseText] = useState<{ text_uthmani: string; translations: any[] } | null>(null);
@@ -40,6 +41,22 @@ export const Journal = ({ verseKey, onSaved }: JournalProps) => {
     };
     fetchData();
   }, [verseKey]);
+
+  useEffect(() => {
+    const fetchInitialSeed = async () => {
+      if (initialContext?.feeling && initialContext?.echo) {
+        setIsAnalyzing(true);
+        const seed = await mcpService.getInitialSeedQuestion(
+          initialContext.feeling,
+          initialContext.echo,
+          verseKey
+        );
+        setAiQuestion(seed);
+        setIsAnalyzing(false);
+      }
+    };
+    fetchInitialSeed();
+  }, [initialContext, verseKey]);
 
   useEffect(() => {
     return () => {

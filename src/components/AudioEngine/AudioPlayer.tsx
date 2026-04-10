@@ -165,6 +165,16 @@ export const AudioPlayer = ({ playlist, onComplete }: AudioPlayerProps) => {
               <p className="text-xl md:text-2xl text-sada-sand-100 font-medium leading-relaxed italic">
                 "{currentItem.translation}"
               </p>
+              
+              {currentItem.reasoning && (
+                <div className="pt-6 mt-6 border-t border-sada-sand-200/10">
+                   <span className="text-[10px] font-black uppercase tracking-[0.3em] text-sada-emerald-400/60 block mb-3">Divine Echo</span>
+                   <p className="text-sm md:text-lg text-sada-sand-100/70 font-medium leading-relaxed">
+                    {currentItem.reasoning}
+                  </p>
+                </div>
+              )}
+
               <div className="flex items-center justify-center gap-4 text-sada-sand-200/40 text-xs font-black uppercase tracking-widest pt-4">
                 <div className="h-px bg-sada-sand-200/10 w-8" />
                 Verse {currentItem.verse_key}

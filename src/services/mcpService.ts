@@ -1,8 +1,12 @@
 /**
  * Model Context Protocol (MCP) Service
+ * Two-step handshake flow:
+ * Step 1: Gemini transforms emotion → Primary_Concept + Search_Keywords
+ * Step 2: QF Content API searches keywords → verse keys
  */
 import { QFContentService } from './qfContentApi';
-import { transformQuery } from './aiQueryTransformer';
+import { transformQuery, vetVersesWithAI, type EmotionalQueryResult, type VettingCandidate } from './aiQueryTransformer';
+import { quranApi } from './quranApi';
 
 const QURAN_API = 'https://api.quran.com/api/v4';
 
@@ -306,13 +310,15 @@ export const mcpService = {
   },
 
 /**
-   * Semantically search for verses based on mood/query using query transformation + Quran API.
-   * Uses thematic search to convert user feelings into relevant Quran verses.
+   * Semantically search for verses based on mood/query using two-step handshake:
+   * Step 1: Gemini (via transformQuery) returns Primary_Concept + Search_Keywords
+   * Step 2: QF Content API searches keywords → verse keys
+   * Uses Tafsir context to avoid inappropriate verses for distressed users
    */
   semanticSearch: async (query: string): Promise<SemanticSearchResult[]> => {
     const normalizedQuery = query.toLowerCase().trim();
     
-    const transformed = await transformQuery(normalizedQuery);
+    const transformed: EmotionalQueryResult | null = await transformQuery(normalizedQuery);
     
     if (!transformed) {
       try {
@@ -337,27 +343,44 @@ export const mcpService = {
     }
 
     try {
-      const apiQuery = transformed.query;
-      const results = await QFContentService.search(apiQuery);
+      const apiQuery = transformed.search_keywords;
+      const initialResults = await QFContentService.search(apiQuery);
 
-      if (results && results.length > 0) {
-        return results.slice(0, 5).map((r: { verse_key?: string; chapter_id?: number; verse_number?: number }, i: number) => {
-          const score = 1.0 - (i * 0.05);
-          return {
-            verse_key: r.verse_key || `${r.chapter_id}:${r.verse_number}`,
-            relevance_score: score,
-            reasoning: transformed.reason
-          };
-        });
+      if (initialResults && initialResults.length > 0) {
+        // Step 3: Vetting with Tafsir
+        // Fetch context for the top 8 candidates
+        const candidates: VettingCandidate[] = await Promise.all(
+          initialResults.slice(0, 8).map(async (r: { verse_key?: string; chapter_id?: number; verse_number?: number }) => {
+            const verseKey = r.verse_key || `${r.chapter_id}:${r.verse_number}`;
+            const verse = await quranApi.getVerseText(verseKey);
+            const tafsir = await quranApi.getTafsir(verseKey);
+            
+            return {
+              verse_key: verseKey,
+              translation: verse.translations?.[0]?.text || 'Translation unavailable',
+              tafsir: tafsir?.text || 'Tafsir unavailable'
+            };
+          })
+        );
+
+        const vettedResults = await vetVersesWithAI(normalizedQuery, candidates);
+
+        if (vettedResults && vettedResults.length > 0) {
+          return vettedResults.map((v, i) => ({
+            verse_key: v.verse_key,
+            relevance_score: 1.0 - (i * 0.05),
+            reasoning: v.explanation
+          }));
+        }
       }
     } catch (error) {
-      console.error('MCP: QF Search API error:', error);
+      console.error('MCP: QF Search API or Vetting error:', error);
     }
 
     const detectedMood = mcpService.detectMood(normalizedQuery);
     const matchedMapping = detectedMood 
       ? MOOD_VERSE_MAPPINGS.find(m => m.mood === detectedMood)
-      : MOOD_VERSE_MAPPINGS.find(m => m.mood === transformed?.query.split(' ')[0]);
+      : MOOD_VERSE_MAPPINGS.find(m => m.mood === transformed?.primary_concept?.toLowerCase().split(' ')[0]);
 
     if (matchedMapping) {
       return matchedMapping.verses.map((v, i) => ({
@@ -370,7 +393,7 @@ export const mcpService = {
     return [{
       verse_key: '94:8',
       relevance_score: 0.9,
-      reasoning: transformed.reason
+      reasoning: transformed.emotional_context
     }];
   },
 
@@ -423,5 +446,41 @@ export const mcpService = {
 
     return contextualQuestions[verseKey] || 
       `How does the scriptural wisdom of verse ${verseKey} specifically speak to the "whispers" you recorded in your journal?`;
+  },
+
+  /**
+   * Generates a "seed question" for the AI Partner to start the conversation,
+   * based on the initial emotional context from the search.
+   */
+  getInitialSeedQuestion: async (feeling: string, echo: string, verseKey: string): Promise<string> => {
+    const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+    const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+
+    if (!GEMINI_API_KEY || GEMINI_API_KEY.includes('YOUR_')) {
+        return `You mentioned feeling "${feeling}". Looking at ${verseKey}, how does its message specifically address your state right now?`;
+    }
+
+    try {
+        const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [{ text: `User felt: "${feeling}"\nDivine Echo: "${echo}"\nVerse: "${verseKey}"\n\nGenerate ONE brief, compassionate, and deep opening question to start their journaling session. Direct and personal.` }]
+                }],
+                systemInstruction: {
+                    parts: [{ text: "You are the 'Sada Scholarly Partner'. Your goal is to help users reflect deeply on the Quran. Start with a question that connects their current feeling to the verse they just heard." }]
+                },
+                generationConfig: {
+                    temperature: 0.7,
+                    maxOutputTokens: 100,
+                }
+            })
+        });
+        const data = await response.json();
+        return data.candidates?.[0]?.content?.parts?.[0]?.text?.replace(/"/g, '') || `How does ${verseKey} resonate with your feeling of "${feeling}"?`;
+    } catch {
+        return `How does ${verseKey} resonate with your feeling of "${feeling}"?`;
+    }
   }
 };

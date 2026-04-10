@@ -90,7 +90,7 @@ const Header = () => {
             </div>
           ) : (
             <button 
-              onClick={() => window.location.href = userService.getLoginUrl()}
+              onClick={async () => window.location.href = await userService.getLoginUrl()}
               className="flex items-center gap-2 px-4 py-2 rounded-full bg-sada-sand-200/10 text-sada-sand-200 hover:bg-sada-sand-200 hover:text-sada-emerald-950 transition-all text-[10px] font-black uppercase tracking-widest border border-sada-sand-200/20"
             >
               <LogIn size={14} />

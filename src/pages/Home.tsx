@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, BookOpen, PenTool, Sparkles, Shuffle, Heart, Moon, Sun, Wind, Flame, Shield, Leaf } from 'lucide-react';
+import { Search, BookOpen, PenTool, Sparkles, Shuffle, Heart, Moon, Sun, Wind, Flame, Shield, Leaf, Mic, MicOff } from 'lucide-react';
 import { mcpService } from '../services/mcpService';
 import { quranApi } from '../services/quranApi';
+import { userService } from '../services/userService';
 import { AudioPlayer } from '../components/AudioEngine/AudioPlayer';
 import type { PlaylistItem } from '../components/AudioEngine/AudioPlayer';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,10 +12,13 @@ export const Home = () => {
   const { theme } = useTheme();
   const [mood, setMood] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const [playlist, setPlaylist] = useState<PlaylistItem[]>([]);
   const [showJournalTrigger, setShowJournalTrigger] = useState(false);
+  const [lastTransformed, setLastTransformed] = useState<{ concept: string; context: string } | null>(null);
   const journalRef = useRef<HTMLDivElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     if (playlist.length > 0 && resultsRef.current) {
@@ -27,6 +31,40 @@ export const Home = () => {
       journalRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, [showJournalTrigger]);
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) recognitionRef.current.stop();
+    };
+  }, []);
+
+  const toggleVoiceSearch = () => {
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Voice search is not supported in this browser.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    
+    recognition.onstart = () => setIsRecording(true);
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setMood(transcript);
+      handleMoodSubmit(undefined, transcript);
+    };
+    recognition.onerror = () => setIsRecording(false);
+    recognition.onend = () => setIsRecording(false);
+
+    recognition.start();
+    recognitionRef.current = recognition;
+  };
 
   const handleMoodSubmit = async (e?: React.FormEvent, manualMood?: string) => {
     if (e) e.preventDefault();
@@ -42,6 +80,15 @@ export const Home = () => {
         setIsSearching(false);
         return;
       }
+
+      // Log the concept for stats
+      // We'll extract a simplified concept name for the dashboard
+      const concept = results[0].reasoning.split(' ')[0].replace(/[^a-zA-Z]/g, '');
+      userService.logThemeSearch(concept || 'Hidayah');
+      setLastTransformed({ 
+        concept: concept || 'Hidayah', 
+        context: results[0].reasoning 
+      });
       
       const items: PlaylistItem[] = await Promise.all(
         results.map(async (res) => {
@@ -143,17 +190,30 @@ export const Home = () => {
           onSubmit={handleMoodSubmit} 
           className="hero-input-container mt-8 md:mt-12 max-w-2xl mx-auto shadow-2xl shadow-sada-emerald-900/10 group !overflow-hidden"
         >
-          <input
-            type="text"
-            value={mood}
-            onChange={(e) => setMood(e.target.value)}
-            placeholder="Feeling a bit lost, anxious, grateful..."
-            className="hero-input"
-          />
-          <div className="flex-shrink-0 w-auto self-center">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={mood}
+              onChange={(e) => setMood(e.target.value)}
+              placeholder={isRecording ? "Listening to your heart..." : "Feeling a bit lost, anxious, grateful..."}
+              className={`hero-input w-full ${isRecording ? 'animate-pulse text-sada-emerald-400' : ''}`}
+            />
+            {isRecording && (
+              <div className="absolute inset-0 pointer-events-none rounded-full ring-4 ring-sada-emerald-500/20 animate-ping" />
+            )}
+          </div>
+          
+          <div className="flex items-center gap-2 pr-2">
+            <button
+              type="button"
+              onClick={toggleVoiceSearch}
+              className={`p-4 rounded-full transition-all duration-500 ${isRecording ? 'bg-red-500 text-white' : 'text-sada-sand-200/40 hover:text-sada-sand-200 hover:bg-white/5'}`}
+            >
+              {isRecording ? <MicOff size={24} /> : <Mic size={24} />}
+            </button>
             <button 
               type="submit"
-              disabled={isSearching}
+              disabled={isSearching || isRecording}
               className="btn-primary flex items-center justify-center p-2.5 rounded-full md:rounded-full md:px-8 md:py-4 transition-all min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0"
             >
               {isSearching ? (
@@ -200,7 +260,15 @@ export const Home = () => {
               "Every echo of the Quran deserves a home in your heart."
             </p>
             <button 
-              onClick={() => window.location.href = '/reflection?verse=' + playlist[0].verse_key}
+              onClick={() => {
+                const url = new URL('/reflection', window.location.origin);
+                url.searchParams.set('verse', playlist[0].verse_key);
+                if (lastTransformed) {
+                  url.searchParams.set('feeling', mood);
+                  url.searchParams.set('echo', lastTransformed.context);
+                }
+                window.location.href = url.toString();
+              }}
               className="btn-primary w-full shadow-xl shadow-sada-sand-200/5 group flex items-center justify-center gap-3"
             >
               <PenTool size={22} className="group-hover:rotate-12 transition-transform" />

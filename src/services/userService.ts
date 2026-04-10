@@ -3,13 +3,33 @@
  * Handles User Posts, Streaks, and Activity with Quran Foundation API + localStorage fallback.
  */
 
+function generateCodeVerifier(): string {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return base64UrlEncode(array);
+}
+
+async function generateCodeChallenge(verifier: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(verifier);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return base64UrlEncode(new Uint8Array(hash));
+}
+
+function base64UrlEncode(buffer: Uint8Array): string {
+  let str = '';
+  buffer.forEach(b => str += String.fromCharCode(b));
+  return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
 const AUTH_API_BASE = 'https://apis.quran.foundation/auth';
 const USER_API_BASE = 'https://api.quran.com/api/v4';
 
 const STORAGE_KEYS = {
   REFLCTIONS: 'sada_reflections',
   AUTH: 'sada_auth',
-  ACTIVITY: 'sada_activity'
+  ACTIVITY: 'sada_activity',
+  THEMES: 'sada_themes'
 };
 
 interface AuthData {
@@ -262,10 +282,15 @@ export const userService = {
   /**
    * Generate the OAuth login URL.
    */
-  getLoginUrl: (): string => {
+  getLoginUrl: async (): Promise<string> => {
     const clientId = import.meta.env.VITE_QF_CLIENT_ID;
     const redirectUri = `${window.location.origin}/oauth/callback`;
-    return `https://oauth2.quran.foundation/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=read+write`;
+    const state = Math.random().toString(36).substring(2, 15);
+    const codeVerifier = generateCodeVerifier();
+    const codeChallenge = await generateCodeChallenge(codeVerifier);
+    sessionStorage.setItem('oauth_state', state);
+    sessionStorage.setItem('code_verifier', codeVerifier);
+    return `https://oauth2.quran.foundation/oauth2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid+offline_access+user+collection&state=${state}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
   },
 
   /**
@@ -290,5 +315,22 @@ export const userService = {
   isAuthenticated: (): boolean => {
     const auth = getLocalStorage<AuthData | null>(STORAGE_KEYS.AUTH, null);
     return !!auth?.token;
+  },
+
+  /**
+   * Log a primary concept/theme for the Spiritual Landscape dashboard.
+   */
+  logThemeSearch: (concept: string): void => {
+    if (!concept) return;
+    const themes = getLocalStorage<Record<string, number>>(STORAGE_KEYS.THEMES, {});
+    themes[concept] = (themes[concept] || 0) + 1;
+    setLocalStorage(STORAGE_KEYS.THEMES, themes);
+  },
+
+  /**
+   * Get all theme frequencies.
+   */
+  getThemeStats: (): Record<string, number> => {
+    return getLocalStorage<Record<string, number>>(STORAGE_KEYS.THEMES, {});
   }
 };
