@@ -20,7 +20,10 @@ export const Callback = () => {
 
     if (code) {
       const clientId = import.meta.env.VITE_QF_CLIENT_ID;
-      const redirectUri = `${window.location.origin}/oauth/callback`;
+      const isLocalhost = window.location.origin.includes('localhost');
+      const redirectUri = isLocalhost 
+        ? `${window.location.origin}/oauth/callback` 
+        : 'https://sada.vercel.app/oauth/callback';
       const authUrl = import.meta.env.VITE_QF_AUTH_URL || 'https://oauth2.quran.foundation';
 
       fetch(`${authUrl}/oauth2/token`, {

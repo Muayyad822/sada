@@ -285,12 +285,14 @@ export const userService = {
   getLoginUrl: async (): Promise<string> => {
     const clientId = import.meta.env.VITE_QF_CLIENT_ID;
     const redirectUri = `${window.location.origin}/oauth/callback`;
+    const productionRedirectUri = 'https://sada.vercel.app/oauth/callback';
+    const finalRedirectUri = window.location.origin.includes('localhost') ? redirectUri : productionRedirectUri;
     const state = Math.random().toString(36).substring(2, 15);
     const codeVerifier = generateCodeVerifier();
     const codeChallenge = await generateCodeChallenge(codeVerifier);
     sessionStorage.setItem('oauth_state', state);
     sessionStorage.setItem('code_verifier', codeVerifier);
-    return `https://oauth2.quran.foundation/oauth2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid+offline_access+user+collection&state=${state}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
+    return `https://oauth2.quran.foundation/oauth2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(finalRedirectUri)}&response_type=code&scope=openid+offline_access+user+collection&state=${state}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
   },
 
   /**
