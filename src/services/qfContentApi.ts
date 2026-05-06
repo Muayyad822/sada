@@ -34,7 +34,7 @@ export class QFContentService {
         if (Date.now() < expiry - 60000) {
           return token;
         }
-      } catch (e) {
+      } catch {
         localStorage.removeItem(this.STORAGE_KEY);
       }
     }

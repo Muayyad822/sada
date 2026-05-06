@@ -51,7 +51,7 @@ interface SpeechRecognition extends EventTarget {
   stop(): void;
 }
 
-declare var webkitSpeechRecognition: {
+declare let webkitSpeechRecognition: {
   new (): SpeechRecognition;
   prototype: SpeechRecognition;
 };

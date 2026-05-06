@@ -1,4 +1,5 @@
 import { Dashboard } from '../components/HabitDashboard/Dashboard';
+import { GoalsWidget } from '../components/HabitDashboard/GoalsWidget';
 import { motion } from 'framer-motion';
 import { userService } from '../services/userService';
 import { useEffect, useState } from 'react';
@@ -88,6 +89,9 @@ export const Stats: React.FC = () => {
                 <div className="text-center py-8 opacity-20 italic text-sm">No badges earned yet.</div>
               )}
            </div>
+        </div>
+        <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-8">
+          <GoalsWidget />
         </div>
       </section>
 

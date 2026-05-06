@@ -50,7 +50,7 @@ export const firebaseService = {
   /**
    * Schedule a mock notification (for hackathon demo)
    */
-  scheduleSpacedRepetition: (_verseKey: string, _feeling: string) => {
+  scheduleSpacedRepetition: (_verseKey: string, _feeling?: string) => {
     // In a real app, this would be handled by a backend
     console.log(`Scheduling reflection reminder for ${_verseKey} in 3 days...`);
     
