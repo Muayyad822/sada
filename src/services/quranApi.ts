@@ -79,5 +79,53 @@ export const quranApi = {
     const response = await fetch(`${API_BASE}/tafsirs/${tafsirId}/by_ayah/${verseKey}`);
     const data = await response.json();
     return data.tafsir;
+  },
+
+  /**
+   * Fetches multiple translations and synthesizes them into a "Simple English" version using Gemini.
+   */
+  getSynthesizedTranslation: async (verseKey: string, userFeeling?: string): Promise<string> => {
+    const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+    const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+
+    try {
+      // Fetch Clear Quran (131) and Sahih International (20)
+      const response = await fetch(`${API_BASE}/verses/by_key/${verseKey}?translations=131,20&fields=text_uthmani`);
+      const data = await response.json();
+      const translations = data.verse?.translations || [];
+      
+      if (translations.length === 0) return 'Translation unavailable';
+      
+      const cleanTranslations = translations.map((t: any) => t.text.replace(/<[^>]*>/g, '').trim()).join('\n---\n');
+
+      if (!GEMINI_API_KEY || GEMINI_API_KEY.includes('YOUR_')) {
+        return translations[0].text.replace(/<[^>]*>/g, '').trim(); // Fallback to first translation
+      }
+
+      const prompt = `Verse: ${verseKey}\n\nTranslations:\n${cleanTranslations}\n\n${userFeeling ? `User is feeling: "${userFeeling}"\n` : ''}Task: Synthesize these translations into ONE high-quality, modern, "Simple English" version. Keep it spiritually profound but accessible. Direct address preferred. Maximum 2 sentences.`;
+
+      const aiResponse = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+              contents: [{
+                  parts: [{ text: prompt }]
+              }],
+              systemInstruction: {
+                  parts: [{ text: "You are the 'Sada Voice of Guidance'. Your task is to provide clear, beautiful, and emotionally resonant English renderings of Quranic verses for a modern audience." }]
+              },
+              generationConfig: {
+                  temperature: 0.2,
+                  maxOutputTokens: 150,
+              }
+          })
+      });
+
+      const aiData = await aiResponse.json();
+      return aiData.candidates?.[0]?.content?.parts?.[0]?.text?.replace(/"/g, '').trim() || translations[0].text;
+    } catch (error) {
+      console.error('Synthesis error:', error);
+      return 'Translation unavailable';
+    }
   }
 };

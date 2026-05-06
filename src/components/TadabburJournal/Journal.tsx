@@ -23,8 +23,10 @@ export const Journal = ({ verseKey, onSaved, initialContext }: JournalProps) => 
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [reflectionStage, setReflectionStage] = useState<'reading' | 'reflecting' | 'deepening' | 'saved'>('reading');
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const aiQuestionRef = useRef<HTMLDivElement>(null);
+  const draftLoadedRef = useRef(false);
 
   useEffect(() => {
     if (aiQuestion && aiQuestionRef.current) {
@@ -38,6 +40,8 @@ export const Journal = ({ verseKey, onSaved, initialContext }: JournalProps) => 
       setVerseText(v);
       const t = await quranApi.getTafsir(verseKey);
       setTafsir(t);
+      // After data loads, move to reflecting stage
+      setReflectionStage('reflecting');
     };
     fetchData();
   }, [verseKey]);
@@ -66,11 +70,47 @@ export const Journal = ({ verseKey, onSaved, initialContext }: JournalProps) => 
     };
   }, []);
 
-  const startVoiceRecording = () => {
+  // Auto-save draft
+  useEffect(() => {
+    if (reflection.trim() && !isSaved) {
+      const draft = { verseKey, reflection, aiQuestion, timestamp: Date.now() };
+      localStorage.setItem(`sada_draft_${verseKey}`, JSON.stringify(draft));
+    }
+  }, [reflection, aiQuestion, verseKey, isSaved]);
+
+  // Load draft on mount
+  useEffect(() => {
+    if (draftLoadedRef.current || reflection) return;
+
+    const draft = localStorage.getItem(`sada_draft_${verseKey}`);
+    if (draft) {
+      try {
+        const parsed = JSON.parse(draft);
+        if (parsed.timestamp > Date.now() - 24 * 60 * 60 * 1000) { // Within 24 hours
+          setReflection(parsed.reflection || '');
+          setAiQuestion(parsed.aiQuestion || null);
+          draftLoadedRef.current = true;
+        }
+      } catch (e) {
+        console.warn('Failed to load draft:', e);
+      }
+    }
+  }, [verseKey, reflection]);
+
+  const startVoiceRecording = async () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    
+
     if (!SpeechRecognition) {
-      console.warn('Voice recording not supported in this browser');
+      alert('Voice recording is not supported in this browser. Please use a modern browser like Chrome or Edge.');
+      return;
+    }
+
+    try {
+      // Request microphone permission
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (error) {
+      console.error('Microphone permission denied:', error);
+      alert('Microphone access is required for voice recording. Please allow microphone permissions and try again.');
       return;
     }
 
@@ -78,7 +118,7 @@ export const Journal = ({ verseKey, onSaved, initialContext }: JournalProps) => 
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = 'ar-SA';
+      recognition.lang = 'ar-SA'; // Try Arabic first, fallback to English if needed
 
       recognition.onstart = () => {
         setIsRecording(true);
@@ -100,6 +140,22 @@ export const Journal = ({ verseKey, onSaved, initialContext }: JournalProps) => 
       recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
         console.error('Speech recognition error:', event.error);
         setIsRecording(false);
+
+        let errorMessage = 'Voice recording failed.';
+        switch (event.error) {
+          case 'not-allowed':
+            errorMessage = 'Microphone permission denied. Please allow access and try again.';
+            break;
+          case 'no-speech':
+            errorMessage = 'No speech detected. Please speak clearly.';
+            break;
+          case 'network':
+            errorMessage = 'Network error occurred. Please check your connection.';
+            break;
+          default:
+            errorMessage = `Recording error: ${event.error}`;
+        }
+        alert(errorMessage);
       };
 
       recognition.onend = () => {
@@ -109,7 +165,8 @@ export const Journal = ({ verseKey, onSaved, initialContext }: JournalProps) => 
       recognition.start();
       recognitionRef.current = recognition;
     } catch (error) {
-      console.warn('Failed to start voice recording');
+      console.warn('Failed to start voice recording:', error);
+      alert('Failed to start voice recording. Please try again.');
     }
   };
 
@@ -127,22 +184,58 @@ export const Journal = ({ verseKey, onSaved, initialContext }: JournalProps) => 
     const question = await mcpService.getDeepeningQuestion(reflection, verseKey);
     setAiQuestion(question);
     setIsAnalyzing(false);
+    setReflectionStage('deepening');
   };
 
   const handleSave = async () => {
+    if (!reflection.trim()) return;
+
     setIsSaving(true);
-    const saved = await userService.saveReflection({
-      verse_key: verseKey,
-      reflection_text: reflection,
-      ai_question: aiQuestion || undefined
-    });
-    setIsSaving(false);
-    setIsSaved(true);
-    if (onSaved) onSaved(saved);
+    try {
+      const result = await userService.saveReflection({
+        verse_key: verseKey,
+        reflection_text: reflection,
+        ai_question: aiQuestion || undefined
+      });
+      setIsSaving(false);
+      setIsSaved(true);
+      setReflectionStage('saved');
+      localStorage.removeItem(`sada_draft_${verseKey}`);
+      if (onSaved) onSaved(result.reflection);
+
+      // Show appropriate message
+      if (!result.success) {
+        alert('Reflection saved locally. It will sync when you\'re online.');
+      }
+    } catch (error) {
+      console.error('Failed to save reflection:', error);
+      setIsSaving(false);
+      alert('Failed to save reflection. Please try again.');
+    }
+  };
+
+  const getProgressPercentage = () => {
+    switch (reflectionStage) {
+      case 'reading': return 25;
+      case 'reflecting': return 50;
+      case 'deepening': return 75;
+      case 'saved': return 100;
+      default: return 0;
+    }
   };
 
   return (
     <div className="flex flex-col gap-8 w-full">
+      {/* Progress Indicator */}
+      <div className="w-full bg-sada-sand-200/10 rounded-full h-2 overflow-hidden">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${getProgressPercentage()}%` }}
+          transition={{ duration: 0.5 }}
+          className="h-full bg-gradient-to-r from-sada-sand-200 to-sada-emerald-600 rounded-full"
+        />
+      </div>
+
       {/* Verse & Tafsir Context */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="glass-card p-10 flex flex-col justify-between border-sada-sand-200/5">
@@ -184,7 +277,12 @@ export const Journal = ({ verseKey, onSaved, initialContext }: JournalProps) => 
       </div>
 
       {/* Reflection Input Area */}
-      <div className="glass-card p-10 md:p-12 relative overflow-hidden">
+      {reflectionStage !== 'reading' && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-card p-10 md:p-12 relative overflow-hidden"
+        >
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-sada-sand-100/20 to-transparent" />
         
         <div className="max-w-3xl mx-auto space-y-10">
@@ -284,20 +382,21 @@ export const Journal = ({ verseKey, onSaved, initialContext }: JournalProps) => 
           </AnimatePresence>
 
           {isSaved && (
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               className="flex flex-col items-center justify-center gap-4 p-10 text-sada-sand-200 bg-sada-emerald-900/10 rounded-3xl border border-sada-emerald-800/30"
             >
               <CheckCircle2 size={48} className="animate-bounce" />
               <div className="text-center">
-                 <span className="text-2xl font-black block mb-1">Reflection Enshrined</span>
-                 <span className="text-xs font-bold uppercase tracking-[0.2em] opacity-40">Your progress has been synced with Quran Foundation</span>
+                 <span className="text-2xl font-black block mb-1">Reflection Saved</span>
+                 <span className="text-xs font-bold uppercase tracking-[0.2em] opacity-40">Safely stored in your personal journey</span>
               </div>
             </motion.div>
           )}
         </div>
-      </div>
+        </motion.div>
+      )}
     </div>
   );
 };

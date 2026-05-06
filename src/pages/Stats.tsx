@@ -1,17 +1,22 @@
-import { Settings, Bell, Sparkles, Compass, MapPin } from 'lucide-react';
 import { Dashboard } from '../components/HabitDashboard/Dashboard';
 import { motion } from 'framer-motion';
-import { useTheme } from '../contexts/ThemeContext';
 import { userService } from '../services/userService';
 import { useEffect, useState } from 'react';
+import { Award, MapPin } from 'lucide-react';
 
 export const Stats: React.FC = () => {
-  const { theme } = useTheme();
   const [themeStats, setThemeStats] = useState<Record<string, number>>({});
+  const [badges, setBadges] = useState<string[]>([]);
+  const [cycleProgress, setCycleProgress] = useState(0);
 
   useEffect(() => {
     setThemeStats(userService.getThemeStats());
+    setBadges(userService.getBadges());
+    const uniqueThemes = Object.keys(userService.getThemeStats()).length;
+    setCycleProgress((uniqueThemes % 3) / 3 * 100 || (uniqueThemes > 0 ? 100 : 0));
   }, []);
+
+
 
   const getThemeColor = (themeName: string) => {
     const colors: Record<string, string> = {
@@ -41,15 +46,50 @@ export const Stats: React.FC = () => {
           <p className="text-sada-sand-100/40 text-xl font-medium italic">Measuring the pulse of your daily devotion.</p>
         </div>
         
-        <div className="flex gap-4 mb-2">
-           <button className="p-4 bg-sada-slate-900 rounded-2xl text-sada-sand-200 hover:bg-sada-emerald-700 hover:text-white transition-all duration-300 border border-sada-sand-100/10 soft-shadow group bg-dark">
-              <Bell size={24} className="group-hover:rotate-12" />
-           </button>
-           <button className="p-4 bg-sada-slate-900 rounded-2xl text-sada-sand-200 hover:bg-sada-emerald-700 hover:text-white transition-all duration-300 border border-sada-sand-100/10 soft-shadow group bg-dark">
-              <Settings size={24} className="group-hover:spin-slow" />
-           </button>
-        </div>
+
       </div>
+
+      {/* Emotional Cycle & Badges */}
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 glass-card p-10 bg-gradient-to-br from-sada-slate-900 to-sada-emerald-900/20 border-sada-sand-200/10 relative overflow-hidden group">
+           <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:rotate-12 transition-all">
+              <Award size={120} />
+           </div>
+           <span className="text-[10px] font-black uppercase tracking-[0.4em] text-sada-emerald-400 mb-6 block">Emotional Cycle Progress</span>
+           <h3 className="text-4xl font-black text-white mb-4">Khatm of the Soul</h3>
+           <p className="text-sada-sand-100/60 mb-8 max-w-md">Complete a cycle by reflecting on 3 distinct spiritual themes (concepts) to earn a new badge.</p>
+           
+           <div className="space-y-4">
+              <div className="flex justify-between items-end mb-2">
+                 <span className="text-xs font-black uppercase text-sada-sand-200/40">Current Cycle</span>
+                 <span className="text-xl font-black text-sada-sand-100">{Math.round(cycleProgress)}%</span>
+              </div>
+              <div className="h-4 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+                 <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${cycleProgress}%` }}
+                    className="h-full bg-gradient-to-r from-sada-emerald-600 to-sada-sand-200"
+                 />
+              </div>
+           </div>
+        </div>
+
+        <div className="glass-card p-8 bg-dark/50 border-sada-sand-200/10">
+           <span className="text-[10px] font-black uppercase tracking-[0.4em] text-sada-sand-200/40 mb-8 block">Unlocked Badges</span>
+           <div className="space-y-4">
+              {badges.length > 0 ? badges.map(badge => (
+                <div key={badge} className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/5 hover:border-sada-sand-200/20 transition-all">
+                   <div className="w-10 h-10 rounded-full bg-sada-sand-200/10 flex items-center justify-center text-sada-sand-200">
+                      <Award size={20} />
+                   </div>
+                   <span className="font-bold text-sada-sand-100">{badge}</span>
+                </div>
+              )) : (
+                <div className="text-center py-8 opacity-20 italic text-sm">No badges earned yet.</div>
+              )}
+           </div>
+        </div>
+      </section>
 
       {/* Stats Breakdown */}
       <section className="mt-10">
@@ -95,59 +135,11 @@ export const Stats: React.FC = () => {
         </div>
       </section>
 
-      {/* Deep Dive Action Grid */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <motion.div 
-          whileHover={{ y: -5, scale: 1.02 }}
-          className={`glass-card p-12 group cursor-pointer border-sada-sand-200/10 hover:border-sada-sand-200/30 transition-all shadow-2xl overflow-hidden relative ${theme === 'dark' ? 'bg-gradient-to-br from-sada-emerald-900/40 to-sada-slate-900' : 'bg-gradient-to-br from-sada-emerald-800/10 to-sada-slate-900'}`}
-        >
-          <div className="absolute -right-10 -bottom-10 opacity-5 group-hover:opacity-10 transition-all">
-             <Compass size={200} />
-          </div>
-          <div className="w-16 h-16 bg-sada-sand-200/10 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-sada-sand-200 transition-all duration-500 shadow-lg">
-            <Compass size={32} className="text-sada-sand-200 group-hover:text-sada-emerald-950" />
-          </div>
-          <h3 className="text-3xl font-black text-sada-sand-50 mb-3 tracking-tight">Explore New Moods</h3>
-          <p className="text-sada-sand-100/40 font-medium leading-relaxed max-w-sm">Discover verses for spiritual states you haven't explored yet based on your unique history.</p>
-        </motion.div>
 
-        <motion.div 
-          whileHover={{ y: -5, scale: 1.02 }}
-          className={`glass-card p-12 group cursor-pointer border-sada-sand-200/10 hover:border-sada-sand-200/30 transition-all shadow-2xl overflow-hidden relative ${theme === 'dark' ? 'bg-gradient-to-br from-sada-slate-900 to-sada-emerald-900/40' : 'bg-gradient-to-br from-sada-slate-900 to-sada-emerald-800/10'}`}
-        >
-          <div className="absolute -right-10 -bottom-10 opacity-5 group-hover:opacity-10 transition-all">
-             <Sparkles size={200} />
-          </div>
-          <div className="w-16 h-16 bg-sada-emerald-600/10 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-sada-emerald-600 transition-all duration-500 shadow-lg">
-            <Sparkles size={32} className="text-sada-emerald-600 group-hover:text-sada-sand-50" />
-          </div>
-          <h3 className="text-3xl font-black text-sada-sand-50 mb-3 tracking-tight">AI Pattern Analysis</h3>
-          <p className="text-sada-sand-100/40 font-medium leading-relaxed max-w-sm">Review your journey and discover thematic patterns across all your recorded reflections.</p>
-        </motion.div>
-      </section>
 
-      {/* Footer Banner - Wisdom Quote */}
-      <div className="text-center py-24 bg-gradient-to-b from-sada-sand-200/5 to-transparent rounded-[4rem] border border-sada-sand-100/5 mt-10 relative overflow-hidden group">
-        <motion.div 
-          animate={{ rotate: 360 }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-sada-sand-200/5 pointer-events-none"
-        >
-           <Sparkles size={400} />
-        </motion.div>
-        
-        <div className="relative z-10 space-y-8">
-          <Sparkles size={48} className="text-sada-sand-200/20 mx-auto group-hover:scale-110 transition-transform duration-700" />
-          <p className="text-sada-sand-50/70 text-2xl font-black max-w-2xl mx-auto italic tracking-tight leading-relaxed px-8">
-            "The most beloved of deeds to Allah are those that are most consistent, even if they are small."
-          </p>
-          <div className="flex items-center justify-center gap-4 text-sada-sand-200/30">
-             <div className="h-px w-10 bg-current" />
-             <span className="text-[10px] font-black uppercase tracking-[0.4em]">Hadith Bukhari</span>
-             <div className="h-px w-10 bg-current" />
-          </div>
-        </div>
-      </div>
+
+
+
     </div>
   );
 };

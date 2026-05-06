@@ -99,16 +99,17 @@ export const userService = {
   /**
    * Save a user's reflection to the User Post API with localStorage fallback.
    */
-  saveReflection: async (reflection: Omit<Reflection, 'id' | 'created_at'>): Promise<Reflection> => {
+  saveReflection: async (reflection: Omit<Reflection, 'id' | 'created_at'>): Promise<{ success: boolean; reflection: Reflection }> => {
     const newReflection: Reflection = {
       ...reflection,
       id: Date.now(),
       created_at: new Date().toISOString()
     };
 
+    let apiSuccess = false;
     try {
       const { chapterId, from, to } = parseVerseKey(reflection.verse_key);
-      
+
       const response = await fetch(`${USER_API_BASE}/posts`, {
         method: 'POST',
         headers: {
@@ -128,18 +129,20 @@ export const userService = {
       if (response.ok) {
         const data = await response.json();
         console.log('Reflection saved to API:', data);
+        apiSuccess = true;
       } else {
-        throw new Error('API unavailable');
+        console.log('API save failed with status:', response.status);
       }
     } catch (error) {
       console.log('API save failed, using localStorage:', error);
     }
 
+    // Always save to localStorage as backup
     const reflections = getLocalStorage(STORAGE_KEYS.REFLCTIONS, [] as Reflection[]);
     reflections.unshift(newReflection);
     setLocalStorage(STORAGE_KEYS.REFLCTIONS, reflections);
 
-    return newReflection;
+    return { success: apiSuccess, reflection: newReflection };
   },
 
   /**
@@ -334,5 +337,66 @@ export const userService = {
    */
   getThemeStats: (): Record<string, number> => {
     return getLocalStorage<Record<string, number>>(STORAGE_KEYS.THEMES, {});
+  },
+
+  /**
+   * Add a verse to the user's collection on Quran.com.
+   */
+  addToCollection: async (verseKey: string): Promise<boolean> => {
+    try {
+      const { chapterId, from } = parseVerseKey(verseKey);
+      const response = await fetch(`${USER_API_BASE}/collections/bookmarks`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        },
+        body: JSON.stringify({ chapterId, verseNumber: from })
+      });
+
+      if (response.ok) {
+        console.log(`Verse ${verseKey} bookmarked.`);
+        return true;
+      }
+    } catch (error) {
+      console.error('Bookmark API failed:', error);
+    }
+    return false;
+  },
+
+  /**
+   * Check if a verse is in the user's collection.
+   */
+  isInCollection: async (verseKey: string): Promise<boolean> => {
+    // For MVP, we can't easily fetch the whole collection every time.
+    // We'll use a local cache for the current session.
+    const cached = getLocalStorage<string[]>('sada_bookmarks_cache', []);
+    return cached.includes(verseKey);
+  },
+
+  /**
+   * Get the count of completed "Emotional Cycles".
+   * A cycle is completed when the user reflects on 3 distinct primary concepts.
+   */
+  getEmotionalCyclesCount: (): number => {
+    const themes = getLocalStorage<Record<string, number>>(STORAGE_KEYS.THEMES, {});
+    const uniqueThemes = Object.keys(themes).length;
+    return Math.floor(uniqueThemes / 3);
+  },
+
+  /**
+   * Check for "Khatm of the Soul" badges.
+   */
+  getBadges: (): string[] => {
+    const cycles = userService.getEmotionalCyclesCount();
+    const badges: string[] = [];
+    if (cycles >= 1) badges.push('Soul Seeker');
+    if (cycles >= 3) badges.push('Heart Healer');
+    if (cycles >= 5) badges.push('Spiritual Sage');
+    
+    const reflections = getLocalStorage(STORAGE_KEYS.REFLCTIONS, []).length;
+    if (reflections >= 10) badges.push('Consistent Contemplator');
+    
+    return badges;
   }
 };
