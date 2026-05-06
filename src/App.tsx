@@ -1,9 +1,10 @@
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
-import { Headphones, PenTool, LayoutDashboard, Sun, Moon, LogIn, LogOut, User } from 'lucide-react';
+import { Headphones, PenTool, LayoutDashboard, Sun, Moon, LogIn, LogOut, User, Users } from 'lucide-react';
 import { Home } from './pages/Home';
 import { Reflection } from './pages/Reflection';
 import { Stats } from './pages/Stats';
+import { Community } from './pages/Community';
 import { Privacy } from './pages/Privacy';
 import { Terms } from './pages/Terms';
 import { About } from './pages/About';
@@ -41,6 +42,14 @@ const Navbar = () => {
         >
           <PenTool size={24} />
           <span className="text-[10px] font-black uppercase tracking-[0.2em] leading-none">Reflect</span>
+        </Link>
+
+        <Link
+          to="/community"
+          className={`flex flex-col items-center gap-1.5 transition-all duration-300 hover:text-sada-sand-200 ${isActive('/community') ? 'text-sada-sand-200 scale-110' : 'text-sada-sand-100/40'}`}
+        >
+          <Users size={24} />
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] leading-none">Echoes</span>
         </Link>
 
         <Link 
@@ -123,6 +132,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/reflection" element={<Reflection />} />
             <Route path="/stats" element={<Stats />} />
+            <Route path="/community" element={<Community />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/about" element={<About />} />

@@ -95,6 +95,13 @@ const parseVerseKey = (verseKey: string): { chapterId: number; from: number; to:
   return { chapterId: chapter, from: verse || 1, to: verse || 1 };
 };
 
+export interface Goal {
+  id?: string;
+  type: string;
+  targetAmount: number;
+  progressAmount: number;
+}
+
 export const userService = {
   /**
    * Save a user's reflection to the User Post API with localStorage fallback.
@@ -210,15 +217,20 @@ export const userService = {
     };
 
     try {
-      await fetch(`${USER_API_BASE}/activity`, {
+      await fetch(`${USER_API_BASE}/activity-days`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...getAuthHeaders()
         },
-        body: JSON.stringify({ type, minutes, verse_key: verseKey })
+        body: JSON.stringify({
+          activityType: type === 'tilawah' ? 'READING' : 'LISTENING',
+          amount: minutes,
+          // Note: verseKey might not directly map if the API requires something else,
+          // but we satisfy the activity days api call.
+        })
       });
-    } catch (error) {
+    } catch {
       console.log('Activity API failed, local only');
     }
 
@@ -287,9 +299,7 @@ export const userService = {
    */
   getLoginUrl: async (): Promise<string> => {
     const clientId = import.meta.env.VITE_QF_CLIENT_ID;
-    const redirectUri = `${window.location.origin}/oauth/callback`;
-    const productionRedirectUri = 'https://sada.vercel.app/oauth/callback';
-    const finalRedirectUri = window.location.origin.includes('localhost') ? redirectUri : productionRedirectUri;
+    const finalRedirectUri = `${window.location.origin}/oauth/callback`;
     const state = Math.random().toString(36).substring(2, 15);
     const codeVerifier = generateCodeVerifier();
     const codeChallenge = await generateCodeChallenge(codeVerifier);
@@ -356,6 +366,9 @@ export const userService = {
 
       if (response.ok) {
         console.log(`Verse ${verseKey} bookmarked.`);
+        const cached = getLocalStorage<string[]>('sada_bookmarks_cache', []);
+        cached.push(verseKey);
+        setLocalStorage('sada_bookmarks_cache', cached);
         return true;
       }
     } catch (error) {
@@ -370,8 +383,58 @@ export const userService = {
   isInCollection: async (verseKey: string): Promise<boolean> => {
     // For MVP, we can't easily fetch the whole collection every time.
     // We'll use a local cache for the current session.
+    try {
+      const response = await fetch(`${USER_API_BASE}/collections/bookmarks`, {
+        headers: getAuthHeaders()
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const verses = data.data?.map((b: any) => `${b.chapterId}:${b.verseNumber}`) || [];
+        return verses.includes(verseKey);
+      }
+    } catch (e) {
+      console.warn("API fallback for isInCollection", e);
+    }
     const cached = getLocalStorage<string[]>('sada_bookmarks_cache', []);
     return cached.includes(verseKey);
+  },
+
+  /**
+   * Create or update a goal
+   */
+  saveGoal: async (type: 'TIME' | 'QURAN_PAGES', targetAmount: number): Promise<boolean> => {
+    try {
+      const response = await fetch(`${USER_API_BASE}/goals`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
+        },
+        body: JSON.stringify({ type, targetAmount, isContinuous: true })
+      });
+      return response.ok;
+    } catch (e) {
+      console.error('Goals API failed', e);
+      return false;
+    }
+  },
+
+  /**
+   * Get user's active goals
+   */
+  getGoals: async (): Promise<Goal[]> => {
+    try {
+      const response = await fetch(`${USER_API_BASE}/goals`, {
+        headers: getAuthHeaders()
+      });
+      if (response.ok) {
+        const data = await response.json();
+        return data.data || [];
+      }
+    } catch (e) {
+      console.error('Goals API failed', e);
+    }
+    return [];
   },
 
   /**
