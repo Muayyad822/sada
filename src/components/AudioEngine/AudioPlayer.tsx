@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, SkipForward, SkipBack, Volume2, Headphones } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, Volume2, Headphones, CloudRain, TreePine, Heart, Smartphone } from 'lucide-react';
+import { userService } from '../../services/userService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -23,13 +24,22 @@ export const AudioPlayer = ({ playlist, onComplete }: AudioPlayerProps) => {
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [isCommuteMode, setIsCommuteMode] = useState(false);
+  const [ambientTrack, setAmbientTrack] = useState<'none' | 'rain' | 'forest'>('none');
+  const [isHearted, setIsHearted] = useState(false);
+  
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const ambientRef = useRef<HTMLAudioElement | null>(null);
 
   const currentItem = playlist[currentIndex];
 
   if (!currentItem) {
     return null;
   }
+
+  useEffect(() => {
+    userService.isInCollection(currentItem.verse_key).then(setIsHearted);
+  }, [currentIndex, currentItem.verse_key]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -52,11 +62,16 @@ export const AudioPlayer = ({ playlist, onComplete }: AudioPlayerProps) => {
             setIsPlaying(false);
           }
         });
+
+        if (ambientRef.current && ambientTrack !== 'none') {
+            ambientRef.current.play().catch(() => {});
+        }
       } else {
         audioRef.current.pause();
+        if (ambientRef.current) ambientRef.current.pause();
       }
     }
-  }, [isPlaying, currentIndex, currentItem.audio_url]);
+  }, [isPlaying, currentIndex, currentItem.audio_url, ambientTrack]);
 
   const handleTimeUpdate = () => {
     if (audioRef.current) {
@@ -86,10 +101,29 @@ export const AudioPlayer = ({ playlist, onComplete }: AudioPlayerProps) => {
     return `${min}:${sec < 10 ? '0' : ''}${sec}`;
   };
 
+  const toggleHeart = async () => {
+    const success = await userService.addToCollection(currentItem.verse_key);
+    if (success) setIsHearted(true);
+  };
+
+  const ambientSources = {
+    rain: 'https://cdn.pixabay.com/audio/2022/03/17/audio_0970a3c20c.mp3',
+    forest: 'https://cdn.pixabay.com/audio/2021/08/09/audio_884b9cbc5f.mp3'
+  };
+
   if (!currentItem) return null;
 
   return (
-    <div className="glass-card p-10 md:p-16 w-full relative overflow-hidden group/player">
+    <div className={`glass-card p-6 md:p-12 w-full relative overflow-hidden group/player transition-all duration-700 ${isCommuteMode ? 'bg-sada-slate-900 border-sada-sand-200/40 translate-y-[-10px] shadow-2xl scale-[1.02]' : ''}`}>
+      {/* Ambient Audio Element */}
+      {ambientTrack !== 'none' && (
+        <audio 
+          ref={ambientRef} 
+          src={ambientSources[ambientTrack as keyof typeof ambientSources]} 
+          loop 
+          autoPlay={isPlaying}
+        />
+      )}
       {/* Background Decor */}
       <div className="absolute top-0 right-0 p-8 opacity-5 group-hover/player:opacity-10 transition-opacity">
         <Headphones size={120} />
@@ -137,22 +171,64 @@ export const AudioPlayer = ({ playlist, onComplete }: AudioPlayerProps) => {
           )}
         </AnimatePresence>
         {/* Progress & Metadata Overlay */}
-        <div className="w-full flex justify-between items-center mb-12">
-           <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-sada-sand-200 animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-sada-sand-200/60">Live Recitation</span>
+        <div className="w-full flex justify-between items-center mb-8">
+           <div className="flex items-center gap-4">
+              <button 
+                onClick={() => setIsCommuteMode(!isCommuteMode)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${isCommuteMode ? 'bg-sada-sand-200 text-sada-emerald-950 border-sada-sand-200' : 'text-sada-sand-200/40 border-sada-sand-200/10 hover:border-sada-sand-200/30'}`}
+              >
+                <Smartphone size={14} />
+                <span className="text-[10px] font-black uppercase tracking-widest">{isCommuteMode ? 'Commute On' : 'Commute Mode'}</span>
+              </button>
+              
+              {!isCommuteMode && (
+                <div className="flex items-center gap-2 border-l border-white/10 pl-4 ml-2">
+                  <button 
+                    onClick={() => setAmbientTrack(ambientTrack === 'rain' ? 'none' : 'rain')}
+                    className={`p-1.5 rounded-full transition-all ${ambientTrack === 'rain' ? 'bg-blue-500/20 text-blue-300' : 'text-white/20 hover:text-white/40'}`}
+                    title="Rain Soundscape"
+                  >
+                    <CloudRain size={16} />
+                  </button>
+                  <button 
+                    onClick={() => setAmbientTrack(ambientTrack === 'forest' ? 'none' : 'forest')}
+                    className={`p-1.5 rounded-full transition-all ${ambientTrack === 'forest' ? 'bg-emerald-500/20 text-emerald-300' : 'text-white/20 hover:text-white/40'}`}
+                    title="Forest Soundscape"
+                  >
+                    <TreePine size={16} />
+                  </button>
+                </div>
+              )}
            </div>
-           <span className="text-[10px] font-black uppercase tracking-[0.3em] text-sada-sand-100/60 transition-colors">{currentIndex + 1} / {playlist.length} Verses</span>
+
+           <div className="flex items-center gap-4">
+            <button 
+              onClick={toggleHeart}
+              className={`p-2 transition-all ${isHearted ? 'text-rose-500 scale-125' : 'text-white/20 hover:text-white/60'}`}
+            >
+              <Heart size={20} fill={isHearted ? "currentColor" : "none"} />
+            </button>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-sada-sand-100/60 transition-colors">{currentIndex + 1} / {playlist.length} Verses</span>
+           </div>
         </div>
 
         {/* Verse Content */}
         <AnimatePresence mode="wait">
           <motion.div 
             key={currentItem.verse_key}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="text-center mb-14 w-full"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            onDragEnd={(_, info) => {
+              if (info.offset.x < -100) {
+                if (currentIndex < playlist.length - 1) setCurrentIndex(currentIndex + 1);
+              } else if (info.offset.x > 100) {
+                if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
+              }
+            }}
+            className={`text-center w-full cursor-grab active:cursor-grabbing ${isCommuteMode ? 'py-12' : 'mb-14'}`}
           >
             <motion.div 
                   initial={{ opacity: 0, y: 10 }}
@@ -162,7 +238,7 @@ export const AudioPlayer = ({ playlist, onComplete }: AudioPlayerProps) => {
                   {currentItem.text_uthmani}
                 </motion.div>
             <div className="max-w-2xl mx-auto space-y-4">
-              <p className="text-xl md:text-2xl text-sada-sand-100 font-medium leading-relaxed italic">
+              <p className={`text-sada-sand-100 font-medium leading-relaxed italic ${isCommuteMode ? 'text-2xl md:text-4xl' : 'text-xl md:text-2xl'}`}>
                 "{currentItem.translation}"
               </p>
               

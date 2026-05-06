@@ -16,9 +16,15 @@ export const Home = () => {
   const [playlist, setPlaylist] = useState<PlaylistItem[]>([]);
   const [showJournalTrigger, setShowJournalTrigger] = useState(false);
   const [lastTransformed, setLastTransformed] = useState<{ concept: string; context: string } | null>(null);
+  const [streak, setStreak] = useState(0);
   const journalRef = useRef<HTMLDivElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const longPressTimer = useRef<any>(null);
+
+  useEffect(() => {
+    userService.getStreakCount().then(setStreak);
+  }, []);
 
   useEffect(() => {
     if (playlist.length > 0 && resultsRef.current) {
@@ -81,8 +87,6 @@ export const Home = () => {
         return;
       }
 
-      // Log the concept for stats
-      // We'll extract a simplified concept name for the dashboard
       const concept = results[0].reasoning.split(' ')[0].replace(/[^a-zA-Z]/g, '');
       userService.logThemeSearch(concept || 'Hidayah');
       setLastTransformed({ 
@@ -92,6 +96,8 @@ export const Home = () => {
       
       const items: PlaylistItem[] = await Promise.all(
         results.map(async (res) => {
+          // Use synthesized translation for a more personal touch
+          const translation = await quranApi.getSynthesizedTranslation(res.verse_key, targetMood);
           const verse = await quranApi.getVerseText(res.verse_key);
           const audio = await quranApi.getVerseAudio(7, res.verse_key);
           
@@ -99,7 +105,7 @@ export const Home = () => {
             verse_key: res.verse_key,
             audio_url: audio.url || '',
             text_uthmani: verse.text_uthmani || '',
-            translation: verse.translations?.[0]?.text || 'Translation unavailable',
+            translation: translation || verse.translations?.[0]?.text || 'Translation unavailable',
             reasoning: res.reasoning
           };
         })
@@ -173,7 +179,14 @@ export const Home = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
+          className="relative"
         >
+          {streak > 0 && (
+            <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-gradient-to-r from-orange-500/20 to-red-500/20 px-4 py-1.5 rounded-full border border-orange-500/30 shadow-lg shadow-orange-500/10">
+              <Flame size={16} className="text-orange-500 animate-bounce" />
+              <span className="text-xs font-black text-orange-200 uppercase tracking-widest">{streak} Day Streak</span>
+            </div>
+          )}
           <h1 className="text-3xl sm:text-4xl md:text-7xl font-black text-sada-sand-50 tracking-tighter leading-[1.1]">
             How are you feeling <br/>
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-sada-sand-200 to-sada-sand-100">spiritually</span> today?
@@ -206,10 +219,18 @@ export const Home = () => {
           <div className="flex items-center gap-2 pr-2">
             <button
               type="button"
-              onClick={toggleVoiceSearch}
-              className={`p-4 rounded-full transition-all duration-500 ${isRecording ? 'bg-red-500 text-white' : 'text-sada-sand-200/40 hover:text-sada-sand-200 hover:bg-white/5'}`}
+              onPointerDown={() => {
+                longPressTimer.current = setTimeout(() => {
+                  toggleVoiceSearch();
+                }, 500);
+              }}
+              onPointerUp={() => {
+                clearTimeout(longPressTimer.current);
+                if (!isRecording) toggleVoiceSearch();
+              }}
+              className={`p-4 rounded-full transition-all duration-500 ${isRecording ? 'bg-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.4)]' : 'text-sada-sand-200/40 hover:text-sada-sand-200 hover:bg-white/5'}`}
             >
-              {isRecording ? <MicOff size={24} /> : <Mic size={24} />}
+              {isRecording ? <MicOff size={24} className="animate-pulse" /> : <Mic size={24} />}
             </button>
             <button 
               type="submit"

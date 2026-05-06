@@ -8,7 +8,6 @@ import { QFContentService } from './qfContentApi';
 import { transformQuery, vetVersesWithAI, type EmotionalQueryResult, type VettingCandidate } from './aiQueryTransformer';
 import { quranApi } from './quranApi';
 
-const QURAN_API = 'https://api.quran.com/api/v4';
 
 export interface SemanticSearchResult {
   verse_key: string;
@@ -401,51 +400,82 @@ export const mcpService = {
    * Analyze reflection and provide a deepening question grounded in tafsir.
    */
   getDeepeningQuestion: async (reflection: string, verseKey: string): Promise<string> => {
+    const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+    const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+
     try {
-      const tafsirResponse = await fetch(`${QURAN_API}/tafsirs/169/by_ayah/${verseKey}`);
-      if (tafsirResponse.ok) {
-        const tafsirData = await tafsirResponse.json();
-        const rawText = tafsirData.tafsir?.text || '';
-        
-        // Strip HTML tags and normalize whitespace
-        const cleanText = rawText.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
-        const tafsirText = cleanText.substring(0, 400);
-        
-        if (tafsirText) {
-          // Analytical prompts based on common themes in reflections
-          const lowercaseRef = reflection.toLowerCase();
-          
-          if (lowercaseRef.includes('struggle') || lowercaseRef.includes('hard') || lowercaseRef.includes('difficult')) {
-            return `Classical scholarship (Ibn Kathir) emphasizes that this verse was sent to provide firmment in trials. Knowing that, how does the specific insight—"${tafsirText.substring(0, 150)}..."—reframing your current struggle?`;
-          }
-          
-          if (lowercaseRef.includes('thank') || lowercaseRef.includes('grateful') || lowercaseRef.includes('blessing')) {
-            return `The tafsir suggests this verse is a 'key to increase.' Looking at your reflection on gratitude, how does the scholarly context—"${tafsirText.substring(0, 150)}..."—reveal even deeper layers of Allah's favors to you?`;
-          }
+      const verse = await quranApi.getVerseText(verseKey);
+      const tafsir = await quranApi.getTafsir(verseKey);
+      const tafsirText = tafsir?.text?.replace(/<[^>]*>/g, '').substring(0, 800) || '';
 
-          if (lowercaseRef.includes('fear') || lowercaseRef.includes('anxious') || lowercaseRef.includes('worried')) {
-            return `In the classical view, this passage serves as a 'shield for the heart.' How does the explanation—"${tafsirText.substring(0, 150)}..."—help you release the specific anxieties you mentioned?`;
-          }
-
-          return `Reflecting on what you wrote through the lens of Ibn Kathir: "${tafsirText.substring(0, 200)}..." — How does this classical perspective deepen your personal connection to ${verseKey}?`;
-        }
+      if (!GEMINI_API_KEY || GEMINI_API_KEY.includes('YOUR_')) {
+        return `How does ${verseKey} specifically speak to the thoughts you just recorded?`;
       }
+
+      const prompt = `Verse: ${verseKey}\nMeaning: ${verse.translations?.[0]?.text}\nTafsir Context: ${tafsirText}\n\nUser Reflection: "${reflection}"\n\nTask: Generate ONE deep, scholarly, and compassionate question that helps the user connect their personal reflection even more deeply with the classical tafsir or the verse's inner meaning. No placeholders.`;
+
+      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+              contents: [{
+                  parts: [{ text: prompt }]
+              }],
+              systemInstruction: {
+                  parts: [{ text: "You are the 'Sada Deepening Partner'. You help users reach a state of Tadabbur (deep contemplation) by bridging their personal trials with divine wisdom." }]
+              },
+              generationConfig: {
+                  temperature: 0.7,
+                  maxOutputTokens: 150,
+              }
+          })
+      });
+
+      const data = await response.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text?.replace(/"/g, '').trim() || `How does ${verseKey} provide clarity to the situation you described?`;
     } catch (error) {
-      console.log('Tafsir API unavailable, using contextual question');
+      console.error('Deepening question error:', error);
+      return `How does the scriptural wisdom of verse ${verseKey} specifically speak to your reflection?`;
     }
+  },
 
-    const contextualQuestions: Record<string, string> = {
-      '1:1': 'How does calling upon "Al-Rahman" (The Most Merciful) change your understanding of Allah\'s mercy in your current state?',
-      '2:153': 'If patience is a form of light, how is Allah illuminated your path through the "Sabr" you mentioned?',
-      '94:5': 'Ibn Kathir notes that "ease" is mentioned twice to overpower one "hardship." Can you see that ease manifesting in your reflection?',
-      '2:255': 'The "Kursi" represents Allah\'s absolute knowledge. How does His knowing your inner thoughts bring comfort to the situation you described?',
-      '3:134': 'The verse describes those who "swallow" their anger. How does that visual metaphor apply to the situation you are navigating?',
-      '14:7': 'Gratitude is a preservation of current blessings and a magnet for future ones. What specific blessing are you most afraid of losing if you aren\'t grateful?',
-      '13:28': 'The heart\'s "rest" is a profound state of tranquility. Is there a part of your reflection that still feels restless, and how can this verse specifically calm it?'
-    };
+  /**
+   * Fetches Asbab al-Nuzul (reasons for revelation) and mirrors it to the user's emotion.
+   */
+  getContextualMirror: async (verseSecret: string, feeling: string): Promise<string> => {
+    const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+    const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
-    return contextualQuestions[verseKey] || 
-      `How does the scriptural wisdom of verse ${verseKey} specifically speak to the "whispers" you recorded in your journal?`;
+    try {
+      const tafsir = await quranApi.getTafsir(verseSecret);
+      const tafsirText = tafsir?.text?.replace(/<[^>]*>/g, '').substring(0, 1000) || '';
+
+      if (!GEMINI_API_KEY || GEMINI_API_KEY.includes('YOUR_')) return '';
+
+      const prompt = `Verse: ${verseSecret}\nTafsir/History: ${tafsirText}\nUser Feeling: "${feeling}"\n\nTask: Explain the historical context of this verse (the "Asbab al-Nuzul") and draw a direct parallel (mirror) to the user's current feeling. Start with: "History tells us that when this verse came down..." or similar. Maximum 3 sentences.`;
+
+      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+              contents: [{
+                  parts: [{ text: prompt }]
+              }],
+              systemInstruction: {
+                  parts: [{ text: "You are the 'Sada Contextual Mirror'. You bring the history of the Quran alive by showing how the Prophets and early believers shared the same emotional human experiences as the user." }]
+              },
+              generationConfig: {
+                  temperature: 0.6,
+                  maxOutputTokens: 250,
+              }
+          })
+      });
+
+      const data = await response.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+    } catch {
+      return '';
+    }
   },
 
   /**
